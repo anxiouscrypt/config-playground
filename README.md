@@ -21,7 +21,7 @@ Screenshot placeholder: `docs/screenshots/gazelle-app-configurator.png`
 - Navigation tabs, feature flags, payment capabilities, and fulfillment controls
 - Store operations settings for hours, pickup instructions, prep ETA, and tax
 - Menu and home-card preview data
-- Mobile preview that reflects theme, menu, home cards, tabs, and capabilities
+- In-page mobile app simulator with clickable tabs, menu browsing, cart state, checkout preview, account screen, and config-driven styling
 - Advanced JSON editor for direct contract inspection and import
 - Server-side validation for color values, capability mirrors, bundle IDs, and location consistency
 - Save, list, load, and delete local app projects with SQLite
@@ -90,7 +90,7 @@ cd frontend && npm run build
 1. Start the backend and frontend.
 2. Create or edit a client project.
 3. Configure brand, theme, tabs, features, payments, fulfillment, store details, menu data, and release metadata.
-4. Watch the mobile preview update immediately.
+4. Use the in-page simulator to switch tabs, add menu items, preview checkout, and inspect account/loyalty states.
 5. Validate and save the project.
 6. Export the Gazelle-shaped payload for handoff to the mobile/catalog integration.
 

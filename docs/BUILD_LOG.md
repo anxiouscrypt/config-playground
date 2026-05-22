@@ -32,3 +32,10 @@
 - Added validation coverage for cross-payload location mismatch.
 - Confirmed backend tests pass.
 - Confirmed the frontend production build passes.
+
+## Phase 6: In-Page Simulator Runtime
+
+- Replaced the static phone preview with a standalone mobile runtime simulator.
+- Added clickable Home, Menu, Orders, and Account screens inside the page.
+- Added simulator cart state, menu item add/remove behavior, checkout preview, preview order placement, account profile, loyalty display, and payment capability chips.
+- Kept the simulator local to the configurator instead of using Expo Snack so real-time config changes remain immediate and self-contained.

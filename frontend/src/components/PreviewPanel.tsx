@@ -1,4 +1,4 @@
-import { MobileAppPreview } from './MobileAppPreview'
+import { MobileRuntime } from '../mobile-runtime/MobileRuntime'
 import type { MobileBuilderProject } from '../lib/types'
 
 type PreviewPanelProps = {
@@ -18,7 +18,7 @@ export function PreviewPanel({ config, readinessChecks }: PreviewPanelProps) {
         </p>
       </div>
       <div className="flex flex-1 items-center justify-center bg-[#ECEDE8] p-5">
-        <MobileAppPreview config={config} />
+        <MobileRuntime config={config} />
       </div>
       <div className="border-t border-[#E3DED4] bg-[#F8F6F1] p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-[#777069]">

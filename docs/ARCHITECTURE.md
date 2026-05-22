@@ -4,7 +4,7 @@
 
 - **React configurator** provides form-first controls for client identity, brand theme, capabilities, store operations, menu content, home cards, and release metadata.
 - **Advanced JSON source view** keeps the developer workflow from the original playground and allows direct inspection/import of the full project payload.
-- **Mobile preview renderer** turns the builder project into a realistic white-label app shell with home content, menu data, capability chips, and bottom tabs.
+- **Mobile runtime simulator** turns the builder project into an interactive in-page app with Home, Menu, Orders, and Account screens, cart state, checkout preview, loyalty/account views, and config-driven styling.
 - **FastAPI backend** validates and persists app projects.
 - **Pydantic models** mirror the important Gazelle mobile/catalog contracts: `appConfig`, `storeConfig`, `menu`, `homeCards`, and build metadata.
 - **SQLite database** stores local drafts as JSON payloads keyed by project ID.
@@ -15,7 +15,7 @@
 User
   -> Configurator controls
   -> MobileBuilderProject state
-  -> Live mobile preview
+  -> Interactive mobile runtime simulator
   -> FastAPI validation
   -> SQLite draft store
   -> Exported Gazelle-shaped payload
@@ -82,4 +82,5 @@ This repo was researched against the Gazelle mobile platform contracts and catal
 - No direct write-back to the Gazelle catalog/admin APIs.
 - No asset upload pipeline for icons, splash images, or menu item photos.
 - No version history or approval workflow.
+- The simulator is a standalone web runtime, not a native Expo/iOS/Android runtime.
 - The menu editor only edits the seeded sample rows; a production builder needs add/remove/reorder controls.

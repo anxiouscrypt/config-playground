@@ -24,6 +24,10 @@ The backend validates more than field presence. It checks that `locationId` is c
 
 Operators need forms. Developers need to see the contract. Keeping both surfaces makes the tool useful for product setup and engineering handoff.
 
+## Local Simulator Instead Of Expo Snack
+
+Expo Snack can embed runnable React Native examples, but this configurator needs instant local updates from form state, predictable availability, and no dependency on a third-party hosted editor/runtime. The MVP uses a standalone in-page mobile runtime. A future version can add Snack export or React Native Web support if the simulator needs to share more actual native-style code.
+
 ## Intentional MVP Limits
 
 This is not a full SaaS builder yet. It does not include auth, asset upload, app-store submission, direct Gazelle API writes, or an approval workflow. Those are important but would obscure the core configurator workflow in this iteration.
