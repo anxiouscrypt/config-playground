@@ -1,10 +1,19 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
 from app.routes.configs import router as configs_router
 
-app = FastAPI(title="Config Playground API")
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(title="Config Playground API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,11 +22,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    init_db()
 
 
 @app.get("/health")
