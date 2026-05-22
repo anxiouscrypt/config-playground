@@ -39,3 +39,10 @@
 - Added clickable Home, Menu, Orders, and Account screens inside the page.
 - Added simulator cart state, menu item add/remove behavior, checkout preview, preview order placement, account profile, loyalty display, and payment capability chips.
 - Kept the simulator local to the configurator instead of using Expo Snack so real-time config changes remain immediate and self-contained.
+
+## Phase 7: React Native Web Runtime
+
+- Added `react-native-web` to render the simulator from React Native primitives instead of hand-authored DOM markup.
+- Aliased `react-native` to `react-native-web` in Vite.
+- Ported the simulator shell to `View`, `Text`, `Pressable`, `ScrollView`, `Image`, and `StyleSheet`.
+- Matched the Gazelle mobile app’s base Home/Menu/Orders/Account layout patterns more closely while keeping the project standalone.

@@ -21,7 +21,7 @@ Screenshot placeholder: `docs/screenshots/gazelle-app-configurator.png`
 - Navigation tabs, feature flags, payment capabilities, and fulfillment controls
 - Store operations settings for hours, pickup instructions, prep ETA, and tax
 - Menu and home-card preview data
-- In-page mobile app simulator with clickable tabs, menu browsing, cart state, checkout preview, account screen, and config-driven styling
+- React Native Web in-page simulator with clickable tabs, menu browsing, cart state, checkout preview, account screen, and config-driven styling
 - Advanced JSON editor for direct contract inspection and import
 - Server-side validation for color values, capability mirrors, bundle IDs, and location consistency
 - Save, list, load, and delete local app projects with SQLite
@@ -43,6 +43,7 @@ The configurator intentionally stays standalone. It mirrors the important Gazell
 ## Tech Stack
 
 - React, TypeScript, Vite
+- React Native Web preview runtime
 - Tailwind CSS
 - FastAPI, Pydantic, SQLite
 - Pytest

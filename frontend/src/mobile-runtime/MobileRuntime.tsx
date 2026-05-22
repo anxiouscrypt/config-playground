@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
-import { ChevronDown, ChevronRight, Coffee, Home, Minus, Plus, ReceiptText, UserRound } from 'lucide-react'
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import type { AppTab, MenuItem, MobileBuilderProject } from '../lib/types'
 
 type MobileRuntimeProps = {
@@ -14,19 +13,22 @@ type RuntimeCartItem = {
   quantity: number
 }
 
-const tabIcons: Record<AppTab, typeof Home> = {
-  home: Home,
-  menu: Coffee,
-  orders: ReceiptText,
-  account: UserRound,
-}
+type RuntimePalette = ReturnType<typeof getRuntimePalette>
 
-const fallbackPalette = {
+const TAB_BAR_HEIGHT = 68
+const TAB_BAR_BOTTOM = 16
+const HOME_HEADER_EXPANDED_HEIGHT = 156
+const MENU_HEADER_EXPANDED_HEIGHT = 156
+const COMPACT_HEADER_HEIGHT = 88
+
+const uiPalette = {
   background: '#F7F4ED',
   backgroundAlt: '#F0ECE4',
   surfaceStrong: '#FFFDF8',
   surfaceMuted: '#F3EFE7',
+  surfaceGlass: 'rgba(255, 253, 248, 0.84)',
   card: '#FFFDF8',
+  cardMuted: '#F7F2EA',
   text: '#171513',
   textSecondary: '#605B55',
   textMuted: '#9B9389',
@@ -35,8 +37,26 @@ const fallbackPalette = {
   primary: '#1E1B18',
   primaryText: '#FFFFFF',
   accent: '#2D2823',
+  accentSoft: 'rgba(30, 27, 24, 0.06)',
+  brass: '#8E7761',
+  walnut: '#31261F',
+  charcoal: '#1D1A17',
   success: '#4F7A63',
   warning: '#A46C2C',
+}
+
+const tabLabels: Record<AppTab, string> = {
+  home: 'Home',
+  menu: 'Menu',
+  orders: 'Orders',
+  account: 'Account',
+}
+
+const tabGlyphs: Record<AppTab, string> = {
+  home: '⌂',
+  menu: '☕',
+  orders: '▤',
+  account: '◯',
 }
 
 export function MobileRuntime({ config }: MobileRuntimeProps) {
@@ -45,11 +65,11 @@ export function MobileRuntime({ config }: MobileRuntimeProps) {
   )
   const [cartItems, setCartItems] = useState<RuntimeCartItem[]>([])
   const [orderPlaced, setOrderPlaced] = useState(false)
-
   const palette = getRuntimePalette(config)
   const currentTab = config.appConfig.enabledTabs.includes(activeTab)
     ? activeTab
     : (config.appConfig.enabledTabs[0] ?? 'home')
+
   const visibleMenu = useMemo(
     () =>
       config.menu.categories
@@ -60,6 +80,7 @@ export function MobileRuntime({ config }: MobileRuntimeProps) {
         .filter((category) => category.items.length > 0),
     [config.menu.categories],
   )
+
   const visibleCards = useMemo(
     () =>
       config.homeCards.cards
@@ -113,63 +134,50 @@ export function MobileRuntime({ config }: MobileRuntimeProps) {
     )
   }
 
-  const screen =
-    currentTab === 'menu' ? (
-      <MenuScreen
-        addItem={addItem}
-        cartCount={cartCount}
-        categories={visibleMenu}
-        config={config}
-        goToOrders={() => setActiveTab('orders')}
-        palette={palette}
-      />
-    ) : currentTab === 'orders' ? (
-      <OrdersScreen
-        cartItems={cartItems}
-        config={config}
-        orderPlaced={orderPlaced}
-        palette={palette}
-        removeItem={removeItem}
-        setOrderPlaced={setOrderPlaced}
-        subtotalCents={subtotalCents}
-        taxCents={taxCents}
-        totalCents={totalCents}
-      />
-    ) : currentTab === 'account' ? (
-      <AccountScreen config={config} palette={palette} />
-    ) : (
-      <HomeScreen
-        cards={visibleCards}
-        categories={visibleMenu}
-        config={config}
-        goToMenu={() => setActiveTab('menu')}
-        palette={palette}
-      />
-    )
-
   return (
-    <div
-      className="relative h-[710px] w-full max-w-[350px] overflow-hidden rounded-[34px] border-[10px] border-[#171513] shadow-2xl"
-      style={{
-        background: palette.background,
-        color: palette.text,
-        fontFamily: config.appConfig.theme.fontFamily || 'system-ui',
-      }}
-    >
-      <div
-        className="absolute left-1/2 top-0 z-40 h-5 w-32 -translate-x-1/2 rounded-b-2xl bg-[#171513]"
-        aria-hidden="true"
-      />
-      <div className="absolute inset-0 overflow-y-auto pb-28">{screen}</div>
-      <TabBarDepth palette={palette} />
-      <RuntimeTabs
+    <View style={[styles.device, { backgroundColor: palette.background }]}>
+      <View style={styles.notch} />
+      {currentTab === 'menu' ? (
+        <MenuScreen
+          addItem={addItem}
+          cartCount={cartCount}
+          categories={visibleMenu}
+          config={config}
+          goToOrders={() => setActiveTab('orders')}
+          palette={palette}
+        />
+      ) : currentTab === 'orders' ? (
+        <OrdersScreen
+          cartItems={cartItems}
+          config={config}
+          orderPlaced={orderPlaced}
+          palette={palette}
+          removeItem={removeItem}
+          setOrderPlaced={setOrderPlaced}
+          subtotalCents={subtotalCents}
+          taxCents={taxCents}
+          totalCents={totalCents}
+        />
+      ) : currentTab === 'account' ? (
+        <AccountScreen config={config} palette={palette} />
+      ) : (
+        <HomeScreen
+          cards={visibleCards}
+          categories={visibleMenu}
+          config={config}
+          goToMenu={() => setActiveTab('menu')}
+          palette={palette}
+        />
+      )}
+      <TabBarDepth />
+      <ClassicPillTabBar
         activeTab={currentTab}
         cartCount={cartCount}
-        config={config}
+        enabledTabs={config.appConfig.enabledTabs}
         palette={palette}
         setActiveTab={setActiveTab}
       />
-    </div>
+    </View>
   )
 }
 
@@ -184,79 +192,113 @@ function HomeScreen({
   categories: MobileBuilderProject['menu']['categories']
   config: MobileBuilderProject
   goToMenu: () => void
-  palette: ReturnType<typeof getRuntimePalette>
+  palette: RuntimePalette
 }) {
   return (
-    <ScreenShell palette={palette}>
-      <div
-        className="sticky top-0 z-20 px-5 pb-4 pt-10"
-        style={{
-          background: config.appConfig.header.background || palette.background,
-          color: config.appConfig.header.foreground ?? palette.text,
-        }}
+    <View style={[styles.screen, { backgroundColor: palette.background }]}>
+      <ScreenBackdrop palette={palette} />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.homeScrollContent,
+          { paddingTop: HOME_HEADER_EXPANDED_HEIGHT, paddingBottom: 132 },
+        ]}
       >
-        <h2 className="font-serif text-[40px] font-semibold leading-[46px]">
-          {config.appConfig.brand.brandName}
-        </h2>
-        <div className="mt-4 flex items-end justify-between gap-4">
-          <p className="min-w-0 truncate font-serif text-[19px] font-semibold uppercase leading-[25px] tracking-[1.9px]">
-            {config.appConfig.brand.locationName}
-          </p>
-          <button
-            className="flex h-7 items-center gap-1 text-sm font-semibold"
-            type="button"
-            onClick={goToMenu}
+        <View style={styles.cardGrid}>
+          {cards.map((item) => (
+            <GlassCard key={item.cardId} style={styles.newsCard}>
+              <View style={styles.newsCardContent}>
+                <View style={styles.newsCardHeader}>
+                  <HomeNewsTag label={item.label} palette={palette} />
+                </View>
+
+                <View style={styles.newsCopy}>
+                  <Text style={[styles.newsTitle, { color: palette.text }]}>
+                    {item.title}
+                  </Text>
+                  <Text style={[styles.newsBody, { color: palette.textSecondary }]}>
+                    {item.body}
+                  </Text>
+                </View>
+
+                {item.note ? (
+                  <Text style={[styles.newsNote, { color: palette.textMuted }]}>
+                    {item.note}
+                  </Text>
+                ) : null}
+              </View>
+            </GlassCard>
+          ))}
+
+          <View style={styles.previewSection}>
+            <SectionHeader label="Featured" palette={palette} />
+            <View style={[styles.sectionList, { borderTopColor: palette.border }]}>
+              {categories
+                .flatMap((category) => category.items)
+                .slice(0, 2)
+                .map((item, index, items) => (
+                  <MenuItemRow
+                    key={item.id}
+                    item={item}
+                    isLast={index === items.length - 1}
+                    onPress={goToMenu}
+                    palette={palette}
+                  />
+                ))}
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      <View
+        style={[
+          styles.homeHeaderShell,
+          {
+            height: HOME_HEADER_EXPANDED_HEIGHT,
+            backgroundColor: config.appConfig.header.background,
+          },
+        ]}
+      >
+        <View style={styles.hero}>
+          <Text
+            style={[
+              styles.homeTitle,
+              { color: config.appConfig.header.foreground ?? palette.text },
+            ]}
           >
-            Menu
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+            {config.appConfig.brand.brandName}
+          </Text>
+        </View>
 
-      <div className="space-y-3 px-5 pt-3">
-        {cards.map((card) => (
-          <GlassCard key={card.cardId} palette={palette}>
-            <div className="flex min-h-[142px] flex-col justify-between gap-4">
-              <div>
-                <GlassTag label={card.label} palette={palette} />
-              </div>
-              <div>
-                <h3 className="font-serif text-2xl font-semibold leading-7">
-                  {card.title}
-                </h3>
-                <p className="mt-2 text-[15px] leading-[22px]" style={{ color: palette.textSecondary }}>
-                  {card.body}
-                </p>
-              </div>
-              {card.note && (
-                <p className="text-[13px] font-medium leading-[18px]" style={{ color: palette.textMuted }}>
-                  {card.note}
-                </p>
-              )}
-            </div>
-          </GlassCard>
-        ))}
-
-        <section className="pt-2">
-          <SectionHeader label="Featured" palette={palette} />
-          <div className="border-t" style={{ borderColor: palette.border }}>
-            {categories
-              .flatMap((category) => category.items)
-              .slice(0, 2)
-              .map((item, index, items) => (
-                <MenuRow
-                  key={item.id}
-                  isLast={index === items.length - 1}
-                  item={item}
-                  onAdd={() => undefined}
-                  palette={palette}
-                  showAdd={false}
-                />
-              ))}
-          </div>
-        </section>
-      </div>
-    </ScreenShell>
+        <View style={styles.storeRail}>
+          <View style={styles.storeCopy}>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.storeTitle,
+                { color: config.appConfig.header.foreground ?? palette.text },
+              ]}
+            >
+              {config.appConfig.brand.locationName}
+            </Text>
+          </View>
+          <Pressable onPress={goToMenu} style={styles.inlineLink}>
+            <Text
+              style={[
+                styles.inlineLinkText,
+                { color: config.appConfig.header.foreground ?? palette.text },
+              ]}
+            >
+              Menu
+            </Text>
+            <Text style={{ color: config.appConfig.header.foreground ?? palette.text }}>
+              ›
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+      <TabBarDepthBackdrop />
+    </View>
   )
 }
 
@@ -273,7 +315,7 @@ function MenuScreen({
   categories: MobileBuilderProject['menu']['categories']
   config: MobileBuilderProject
   goToOrders: () => void
-  palette: ReturnType<typeof getRuntimePalette>
+  palette: RuntimePalette
 }) {
   const sections = [
     {
@@ -289,52 +331,111 @@ function MenuScreen({
   ]
 
   return (
-    <ScreenShell palette={palette}>
-      <FloatingPageHeader
-        background={config.appConfig.header.background}
-        foreground={config.appConfig.header.foreground ?? palette.text}
-        title={config.appConfig.brand.locationName}
-        eyebrow={`Estimated pick-up is ${config.storeConfig.prepEtaMinutes} min`}
+    <View style={[styles.screen, { backgroundColor: palette.background }]}>
+      <ScreenBackdrop palette={palette} />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.menuScrollContent,
+          { paddingTop: MENU_HEADER_EXPANDED_HEIGHT, paddingBottom: 132 },
+        ]}
       >
-        <p className="font-serif text-[28px] font-semibold leading-8">Menu</p>
-      </FloatingPageHeader>
-
-      <div className="space-y-0 px-5 pt-[156px]">
         {sections.map((section) => (
-          <section key={section.id} className="pt-3">
-            <button className="w-full" type="button">
-              <div className="flex items-center justify-between pb-2">
+          <View key={section.id} style={styles.menuSectionBlock}>
+            <Pressable style={styles.sectionStickyHeader}>
+              <View
+                style={[
+                  styles.sectionHeaderRow,
+                  { backgroundColor: palette.background },
+                ]}
+              >
                 <SectionHeader label={section.title} palette={palette} />
-                <ChevronDown className="h-4 w-4" style={{ color: palette.textMuted }} />
-              </div>
-            </button>
-            <div className="border-t" style={{ borderColor: palette.border }}>
+                <Text style={[styles.chevronText, { color: palette.textMuted }]}>
+                  ⌃
+                </Text>
+              </View>
+            </Pressable>
+            <View style={[styles.sectionList, { borderTopColor: palette.border }]}>
               {section.items.map((item, index) => (
-                <MenuRow
+                <MenuItemRow
                   key={`${section.id}-${item.id}`}
-                  isLast={index === section.items.length - 1}
                   item={item}
+                  isLast={index === section.items.length - 1}
                   onAdd={() => addItem(item)}
+                  onPress={() => addItem(item)}
                   palette={palette}
+                  showAdd
                 />
               ))}
-            </div>
-          </section>
+            </View>
+          </View>
         ))}
-      </div>
+        {cartCount > 0 ? (
+          <Pressable
+            onPress={goToOrders}
+            style={({ pressed }: { pressed: boolean }) => [
+              styles.reviewOrderButton,
+              { backgroundColor: palette.primary },
+              pressed ? styles.pressed : null,
+            ]}
+          >
+            <Text style={[styles.reviewOrderText, { color: palette.primaryText }]}>
+              {cartCount} item{cartCount === 1 ? '' : 's'} in bag
+            </Text>
+            <Text style={[styles.reviewOrderText, { color: palette.primaryText }]}>
+              Review order
+            </Text>
+          </Pressable>
+        ) : null}
+      </ScrollView>
 
-      {cartCount > 0 && (
-        <button
-          className="sticky bottom-2 mx-5 mt-4 flex h-12 items-center justify-between rounded-full px-5 text-sm font-semibold shadow-xl"
-          style={{ background: palette.primary, color: palette.primaryText }}
-          type="button"
-          onClick={goToOrders}
-        >
-          <span>{cartCount} item{cartCount === 1 ? '' : 's'} in bag</span>
-          <span>Review order</span>
-        </button>
-      )}
-    </ScreenShell>
+      <View
+        style={[
+          styles.menuHeaderShell,
+          {
+            height: MENU_HEADER_EXPANDED_HEIGHT,
+            backgroundColor: config.appConfig.header.background,
+          },
+        ]}
+      >
+        <View style={styles.menuHeader}>
+          <View style={styles.headerCopy}>
+            <View style={styles.pickupMetaWrap}>
+              <Text
+                style={[
+                  styles.pickupMeta,
+                  { color: config.appConfig.header.foreground ?? palette.text },
+                ]}
+              >
+                Estimated pick-up is {config.storeConfig.prepEtaMinutes} min
+              </Text>
+            </View>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.locationText,
+                { color: config.appConfig.header.foreground ?? palette.text },
+              ]}
+            >
+              {config.appConfig.brand.locationName}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.tabsWrap}>
+          <View style={styles.tabRow}>
+            <Text
+              style={[
+                styles.activeTab,
+                { color: config.appConfig.header.foreground ?? palette.text },
+              ]}
+            >
+              Menu
+            </Text>
+          </View>
+        </View>
+      </View>
+      <TabBarDepthBackdrop />
+    </View>
   )
 }
 
@@ -352,7 +453,7 @@ function OrdersScreen({
   cartItems: RuntimeCartItem[]
   config: MobileBuilderProject
   orderPlaced: boolean
-  palette: ReturnType<typeof getRuntimePalette>
+  palette: RuntimePalette
   removeItem: (itemId: string) => void
   setOrderPlaced: (value: boolean) => void
   subtotalCents: number
@@ -362,109 +463,111 @@ function OrdersScreen({
   const title = orderPlaced ? 'Track your order' : 'Past Orders'
 
   return (
-    <ScreenShell palette={palette}>
-      <CompactHeader
-        background={config.appConfig.header.background}
-        foreground={config.appConfig.header.foreground ?? palette.text}
-        title={title}
-      />
-      <div className="space-y-7 px-5 pt-[88px]">
-        {orderPlaced && (
-          <GlassCard palette={palette}>
-            <div className="flex items-center justify-between">
+    <View style={[styles.screen, { backgroundColor: palette.background }]}>
+      <ScreenBackdrop palette={palette} />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.staticContent,
+          { paddingTop: COMPACT_HEADER_HEIGHT + 18, paddingBottom: 132 },
+        ]}
+      >
+        {orderPlaced ? (
+          <GlassCard style={styles.activePanelShell}>
+            <View style={styles.activeTopRow}>
               <StatusPill label="Received" palette={palette} />
-              <p className="font-serif text-sm uppercase tracking-[1.4px]">
-                {money(totalCents)}
-              </p>
-            </div>
-            <h3 className="mt-5 font-serif text-[28px] font-bold leading-8">
+              <Text style={[styles.activeAmount, { color: palette.text }]}>
+                {formatUsd(totalCents)}
+              </Text>
+            </View>
+            <Text style={[styles.activeTitle, { color: palette.text }]}>
               We have your order.
-            </h3>
-            <p className="mt-3 text-[15px] leading-6" style={{ color: palette.textSecondary }}>
+            </Text>
+            <Text style={[styles.activeBody, { color: palette.textSecondary }]}>
               {config.appConfig.featureFlags.orderTracking
                 ? 'Follow your pickup progress from here.'
                 : 'Tracking is hidden for this app configuration.'}
-            </p>
-            <div className="mt-5 border-t pt-4" style={{ borderColor: palette.border }}>
-              <p className="text-[11px] font-bold uppercase tracking-[1.1px]" style={{ color: palette.textMuted }}>
+            </Text>
+            <View style={[styles.pickupCodeBlock, { borderTopColor: palette.border }]}>
+              <Text style={[styles.metricLabel, { color: palette.textMuted }]}>
                 Pickup code
-              </p>
-              <p className="mt-2 font-serif text-[34px] font-bold leading-10 tracking-[1.2px]">
+              </Text>
+              <Text style={[styles.pickupCodeValue, { color: palette.text }]}>
                 NMLY
-              </p>
-            </div>
+              </Text>
+            </View>
           </GlassCard>
-        )}
+        ) : null}
 
-        <section>
-          <div className="border-b pb-3" style={{ borderColor: palette.border }}>
+        <View style={styles.sectionBlock}>
+          <View style={[styles.ordersSectionHeader, { borderBottomColor: palette.border }]}>
             <SectionHeader
               action={cartItems.length > 0 ? `${cartItems.length} active` : undefined}
               label="Recent orders"
               palette={palette}
             />
-          </div>
+          </View>
 
           {cartItems.length === 0 && !orderPlaced ? (
-            <p className="mt-4 text-[15px] leading-[22px]" style={{ color: palette.textSecondary }}>
+            <Text style={[styles.sectionMessage, { color: palette.textSecondary }]}>
               Completed pickups and older orders will collect here.
-            </p>
+            </Text>
           ) : null}
 
-          {cartItems.length > 0 && (
-            <div className="mt-3 space-y-3">
-              {cartItems.map((item) => (
-                <div className="flex items-center justify-between gap-3 py-2" key={item.id}>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold uppercase tracking-[1.2px]">
-                      {item.name}
-                    </p>
-                    <p className="text-xs" style={{ color: palette.textSecondary }}>
-                      Qty {item.quantity} · {money(item.priceCents)}
-                    </p>
-                  </div>
-                  <button
-                    className="flex h-8 w-8 items-center justify-center rounded-full"
-                    style={{ background: palette.surfaceMuted }}
-                    type="button"
-                    onClick={() => removeItem(item.id)}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+          {cartItems.map((item) => (
+            <View key={item.id} style={styles.cartRow}>
+              <View style={styles.cartCopy}>
+                <Text numberOfLines={1} style={[styles.cartTitle, { color: palette.text }]}>
+                  {item.name}
+                </Text>
+                <Text style={[styles.cartMeta, { color: palette.textSecondary }]}>
+                  Qty {item.quantity} · {formatUsd(item.priceCents)}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => removeItem(item.id)}
+                style={[styles.removeButton, { backgroundColor: palette.surfaceMuted }]}
+              >
+                <Text style={{ color: palette.text }}>−</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
 
-        {cartItems.length > 0 && (
-          <GlassCard palette={palette}>
+        {cartItems.length > 0 ? (
+          <GlassCard style={styles.checkoutCard}>
             <SectionHeader label="Checkout" palette={palette} />
-            <div className="mt-4 space-y-2">
+            <View style={styles.priceRows}>
               <PriceRow label="Subtotal" value={subtotalCents} />
               <PriceRow label="Estimated tax" value={taxCents} />
-              <div className="border-t pt-3" style={{ borderColor: palette.border }}>
+              <View style={[styles.totalRow, { borderTopColor: palette.border }]}>
                 <PriceRow label="Total" strong value={totalCents} />
-              </div>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <Chip enabled={config.appConfig.paymentCapabilities.applePay} label="Apple Pay" />
-              <Chip enabled={config.appConfig.paymentCapabilities.card} label="Card" />
-              <Chip enabled={config.appConfig.paymentCapabilities.cash} label="Cash" />
-              <Chip enabled={config.appConfig.paymentCapabilities.refunds} label="Refunds" />
-            </div>
-            <button
-              className="mt-5 h-12 w-full rounded-full text-sm font-semibold"
-              style={{ background: palette.primary, color: palette.primaryText }}
-              type="button"
-              onClick={() => setOrderPlaced(true)}
+              </View>
+            </View>
+            <View style={styles.paymentGrid}>
+              <Chip active={config.appConfig.paymentCapabilities.applePay} label="Apple Pay" />
+              <Chip active={config.appConfig.paymentCapabilities.card} label="Card" />
+              <Chip active={config.appConfig.paymentCapabilities.cash} label="Cash" />
+              <Chip active={config.appConfig.paymentCapabilities.refunds} label="Refunds" />
+            </View>
+            <Pressable
+              onPress={() => setOrderPlaced(true)}
+              style={[styles.primaryButton, { backgroundColor: palette.primary }]}
             >
-              Place preview order
-            </button>
+              <Text style={[styles.primaryButtonText, { color: palette.primaryText }]}>
+                Place preview order
+              </Text>
+            </Pressable>
           </GlassCard>
-        )}
-      </div>
-    </ScreenShell>
+        ) : null}
+      </ScrollView>
+      <CompactHeader
+        backgroundColor={config.appConfig.header.background}
+        foregroundColor={config.appConfig.header.foreground ?? palette.text}
+        title={title}
+      />
+      <TabBarDepthBackdrop />
+    </View>
   )
 }
 
@@ -473,308 +576,270 @@ function AccountScreen({
   palette,
 }: {
   config: MobileBuilderProject
-  palette: ReturnType<typeof getRuntimePalette>
+  palette: RuntimePalette
 }) {
-  const greeting = config.client.ownerName.trim() || 'Welcome back'
+  const accountGreeting = config.client.ownerName.trim() || 'Welcome back'
 
   return (
-    <ScreenShell palette={palette}>
-      <CompactHeader
-        background={config.appConfig.header.background}
-        foreground={config.appConfig.header.foreground ?? palette.text}
-        title="Account"
-      />
-      <div className="space-y-7 px-5 pt-[106px]">
-        <GlassCard palette={palette}>
-          <div className="flex items-start justify-between gap-4">
-            <div>
+    <View style={[styles.screen, { backgroundColor: palette.background }]}>
+      <ScreenBackdrop palette={palette} />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.staticContent,
+          { paddingTop: COMPACT_HEADER_HEIGHT + 18, paddingBottom: 132 },
+        ]}
+      >
+        <GlassCard style={styles.heroCard}>
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroCopy}>
               <SectionLabel label="Account" palette={palette} />
-              <h3 className="mt-3 font-serif text-[30px] font-bold leading-[34px]">
-                {greeting}
-              </h3>
-            </div>
-            <Chip enabled={config.appConfig.loyaltyEnabled} label={config.appConfig.loyaltyEnabled ? 'Loyalty On' : 'Loyalty Off'} />
-          </div>
+              <Text style={[styles.heroTitle, { color: palette.text }]}>
+                {accountGreeting}
+              </Text>
+            </View>
+            <Chip
+              active={config.appConfig.loyaltyEnabled}
+              label={config.appConfig.loyaltyEnabled ? 'Loyalty On' : 'Loyalty Off'}
+            />
+          </View>
 
-          <div className="mt-6 border-t pt-5" style={{ borderColor: palette.border }}>
-            <p className="text-[11px] font-bold uppercase tracking-[1.1px]" style={{ color: palette.textMuted }}>
+          <View style={[styles.pointsWrap, { borderTopColor: palette.border }]}>
+            <Text style={[styles.pointsLabel, { color: palette.textMuted }]}>
               Available points
-            </p>
-            <p className="mt-3 font-serif text-[46px] font-bold leading-[50px]">
+            </Text>
+            <Text style={[styles.pointsValue, { color: palette.text }]}>
               {config.appConfig.loyaltyEnabled ? '420' : 'Off'}
-            </p>
-            <p className="mt-2 text-[13px] leading-[18px]" style={{ color: palette.textSecondary }}>
+            </Text>
+            <Text style={[styles.pointsMeta, { color: palette.textSecondary }]}>
               {config.appConfig.loyaltyEnabled
                 ? 'Lifetime 1,240 pts'
                 : 'Loyalty unavailable'}
-            </p>
-          </div>
+            </Text>
+          </View>
         </GlassCard>
 
-        <section>
+        <View style={styles.listSection}>
           <SectionLabel label="Account" palette={palette} />
-          <div className="mt-3 border-t" style={{ borderColor: palette.border }}>
-            <AccountRow label="Rewards activity" />
-            <AccountRow label="Profile" />
-            <AccountRow label="Settings" isLast />
-          </div>
-        </section>
-
-        <div className="text-[12px] leading-5" style={{ color: palette.textSecondary }}>
-          {config.build.appName} · {config.build.bundleId}
-        </div>
-      </div>
-    </ScreenShell>
-  )
-}
-
-function ScreenShell({
-  children,
-  palette,
-}: {
-  children: ReactNode
-  palette: ReturnType<typeof getRuntimePalette>
-}) {
-  return (
-    <div className="min-h-full" style={{ background: palette.background }}>
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-44"
-        style={{ background: 'rgba(255,255,255,0.20)' }}
+          <View style={[styles.pageList, { borderTopColor: palette.border }]}>
+            <AccountPageRow label="Rewards activity" palette={palette} />
+            <AccountPageRow label="Profile" palette={palette} />
+            <AccountPageRow isLast label="Settings" palette={palette} />
+          </View>
+        </View>
+      </ScrollView>
+      <CompactHeader
+        backgroundColor={config.appConfig.header.background}
+        foregroundColor={config.appConfig.header.foreground ?? palette.text}
+        title="Account"
       />
-      {children}
-    </div>
-  )
-}
-
-function FloatingPageHeader({
-  background,
-  children,
-  eyebrow,
-  foreground,
-  title,
-}: {
-  background: string
-  children: ReactNode
-  eyebrow: string
-  foreground: string
-  title: string
-}) {
-  return (
-    <div
-      className="absolute inset-x-0 top-0 z-20 px-5 pb-4 pt-10"
-      style={{ background, color: foreground }}
-    >
-      <p className="text-[13px] leading-[18px]">{eyebrow}</p>
-      <p className="mt-1 font-serif text-[19px] font-semibold uppercase leading-6 tracking-[2px]">
-        {title}
-      </p>
-      <div className="mt-2">{children}</div>
-    </div>
+      <TabBarDepthBackdrop />
+    </View>
   )
 }
 
 function CompactHeader({
-  background,
-  foreground,
+  backgroundColor,
+  foregroundColor,
   title,
 }: {
-  background: string
-  foreground: string
+  backgroundColor: string
+  foregroundColor: string
   title: string
 }) {
   return (
-    <div
-      className="absolute inset-x-0 top-0 z-20 px-5 pb-3 pt-12"
-      style={{ background, color: foreground }}
+    <View
+      pointerEvents="none"
+      style={[
+        styles.pageHeaderFloating,
+        { backgroundColor, height: COMPACT_HEADER_HEIGHT },
+      ]}
     >
-      <p className="font-serif text-[17px] font-semibold uppercase leading-[18px] tracking-[1.2px]">
-        {title}
-      </p>
-    </div>
+      <View style={styles.pageHeader}>
+        <View style={styles.pageCopy}>
+          <Text style={[styles.pageTitle, { color: foregroundColor }]}>{title}</Text>
+        </View>
+      </View>
+    </View>
   )
 }
 
-function MenuRow({
+function MenuItemRow({
   isLast,
   item,
   onAdd,
+  onPress,
   palette,
-  showAdd = true,
+  showAdd = false,
 }: {
   isLast: boolean
   item: MenuItem
-  onAdd: () => void
-  palette: ReturnType<typeof getRuntimePalette>
+  onAdd?: () => void
+  onPress: () => void
+  palette: RuntimePalette
   showAdd?: boolean
 }) {
   return (
-    <article className="min-h-[132px]">
-      <div className="flex w-full items-start gap-4">
-        <div
-          className="flex h-[132px] w-[108px] flex-none items-center justify-center overflow-hidden"
-          style={{ background: '#D5D4CE' }}
-        >
+    <Pressable onPress={onPress} style={({ pressed }: { pressed: boolean }) => [styles.menuRow, pressed ? styles.pressed : null]}>
+      <View style={styles.menuRowMain}>
+        <View style={styles.menuImage}>
           {item.imageUrl ? (
-            <img alt="" className="h-full w-full object-cover" src={item.imageUrl} />
+            <Image source={{ uri: item.imageUrl }} style={styles.menuImagePhoto} resizeMode="cover" />
           ) : (
-            <Coffee className="h-6 w-6" style={{ color: palette.accent }} />
+            <Text style={[styles.menuArtworkFallback, { color: palette.accent }]}>☕</Text>
           )}
-        </div>
-        <div
-          className={`flex min-h-[132px] min-w-0 flex-1 items-center py-2 ${
-            isLast ? '' : 'border-b'
-          }`}
-          style={{ borderColor: palette.border }}
+        </View>
+        <View
+          style={[
+            styles.menuBodyWrap,
+            !isLast ? [styles.menuBodyWrapWithDivider, { borderBottomColor: palette.border }] : null,
+          ]}
         >
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="min-w-0 flex-1 truncate text-base font-medium uppercase leading-5 tracking-[1.3px]">
-                {item.name}
-              </h3>
-              <p className="font-serif text-sm uppercase leading-5 tracking-[1.4px]">
-                {money(item.priceCents)}
-              </p>
-            </div>
-            <p className="mt-1 line-clamp-3 text-xs leading-[14px]" style={{ color: palette.textSecondary }}>
-              {item.description}
-            </p>
-            {showAdd && (
-              <button
-                className="mt-3 inline-flex h-8 items-center gap-1 rounded-full px-3 text-xs font-semibold"
-                style={{ background: palette.primary, color: palette.primaryText }}
-                type="button"
-                onClick={onAdd}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </article>
+          <View style={styles.menuBodyContent}>
+            <View style={styles.menuCopy}>
+              <View style={styles.menuTitleRow}>
+                <Text numberOfLines={1} style={[styles.menuTitle, { color: palette.text }]}>
+                  {item.name}
+                </Text>
+                <Text style={[styles.menuMeta, { color: palette.text }]}>
+                  {formatUsd(item.priceCents)}
+                </Text>
+              </View>
+              <Text numberOfLines={3} style={[styles.menuDescription, { color: palette.textSecondary }]}>
+                {item.description}
+              </Text>
+              {showAdd ? (
+                <Pressable
+                  onPress={onAdd}
+                  style={[styles.addButton, { backgroundColor: palette.primary }]}
+                >
+                  <Text style={[styles.addButtonText, { color: palette.primaryText }]}>Add</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        </View>
+      </View>
+    </Pressable>
   )
 }
 
-function RuntimeTabs({
+function ClassicPillTabBar({
   activeTab,
   cartCount,
-  config,
+  enabledTabs,
   palette,
   setActiveTab,
 }: {
   activeTab: AppTab
   cartCount: number
-  config: MobileBuilderProject
-  palette: ReturnType<typeof getRuntimePalette>
+  enabledTabs: AppTab[]
+  palette: RuntimePalette
   setActiveTab: (tab: AppTab) => void
 }) {
-  const enabledTabs = config.appConfig.enabledTabs
+  const activeIndex = Math.max(enabledTabs.indexOf(activeTab), 0)
+  const routeCount = Math.max(enabledTabs.length, 1)
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
-      <div
-        className="pointer-events-auto relative h-[68px] w-full max-w-[314px] overflow-hidden rounded-full border p-[3px] shadow-2xl backdrop-blur-xl"
-        style={{
-          background: 'rgba(255, 253, 248, 0.72)',
-          borderColor: 'rgba(255,255,255,0.42)',
-        }}
-      >
-        <div
-          className="absolute bottom-1 top-1 rounded-full transition-transform"
-          style={{
-            background: 'rgba(255, 255, 255, 0.88)',
-            left: 3,
-            width: `calc((100% - 6px) / ${enabledTabs.length})`,
-            transform: `translateX(${Math.max(enabledTabs.indexOf(activeTab), 0) * 100}%)`,
-          }}
-        />
-        <div
-          className="relative grid h-full"
-          style={{ gridTemplateColumns: `repeat(${enabledTabs.length}, minmax(0, 1fr))` }}
-        >
-          {enabledTabs.map((tab) => {
-            const Icon = tabIcons[tab]
-            const active = activeTab === tab
-            return (
-              <button
-                className="relative flex flex-col items-center justify-center gap-1 text-[11px] font-semibold capitalize"
-                key={tab}
-                style={{
-                  color: active ? 'rgba(18,18,18,0.96)' : 'rgba(60,60,67,0.72)',
-                }}
-                type="button"
-                onClick={() => setActiveTab(tab)}
-              >
-                <Icon className={tab === 'menu' ? 'h-6 w-6' : 'h-5 w-5'} />
-                {tab}
-                {tab === 'orders' && cartCount > 0 && (
-                  <span
-                    className="absolute right-4 top-2 h-2 w-2 rounded-full"
-                    style={{ background: palette.accent }}
-                  />
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-    </div>
+    <View pointerEvents="box-none" style={styles.tabShell}>
+      <View style={styles.dockWrap}>
+        <View style={styles.blurShell}>
+          <View style={styles.dockInner}>
+            <View style={styles.tabRowRuntime}>
+              <View
+                pointerEvents="none"
+                style={[
+                  styles.activeIndicator,
+                  {
+                    width: `${100 / routeCount}%`,
+                    transform: [{ translateX: `${activeIndex * 100}%` }],
+                  },
+                ]}
+              />
+              {enabledTabs.map((tab) => {
+                const focused = activeTab === tab
+                return (
+                  <Pressable
+                    key={tab}
+                    onPress={() => setActiveTab(tab)}
+                    style={styles.tabSlot}
+                  >
+                    <View style={styles.tabContent}>
+                      <Text
+                        style={[
+                          styles.tabIcon,
+                          focused ? styles.tabIconActive : styles.tabIconBase,
+                          tab === 'menu' ? styles.tabIconMenu : null,
+                        ]}
+                      >
+                        {tabGlyphs[tab]}
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.tabLabel,
+                          focused ? styles.tabLabelActive : styles.tabLabelBase,
+                        ]}
+                      >
+                        {tabLabels[tab]}
+                      </Text>
+                      {tab === 'orders' && cartCount > 0 ? (
+                        <View style={[styles.cartDot, { backgroundColor: palette.accent }]} />
+                      ) : null}
+                    </View>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </View>
+        </View>
+      </View>
+    </View>
   )
 }
 
-function TabBarDepth({ palette }: { palette: ReturnType<typeof getRuntimePalette> }) {
+function ScreenBackdrop({ palette }: { palette: RuntimePalette }) {
+  return <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { backgroundColor: palette.background }]} />
+}
+
+function TabBarDepthBackdrop() {
   return (
-    <div
-      className="pointer-events-none absolute inset-x-0 bottom-0 h-28"
-      style={{
-        background:
-          'linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.008) 45%, rgba(0,0,0,0.03) 70%, rgba(0,0,0,0.065))',
-        mixBlendMode: palette.background === '#000000' ? 'normal' : 'multiply',
-      }}
-    />
+    <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+      <View style={styles.tabBarDepthBelowFade} />
+    </View>
   )
+}
+
+function TabBarDepth() {
+  return <View pointerEvents="none" style={styles.deviceTabDepth} />
 }
 
 function GlassCard({
   children,
-  palette,
+  style,
 }: {
-  children: ReactNode
-  palette: ReturnType<typeof getRuntimePalette>
+  children: React.ReactNode
+  style?: object
 }) {
   return (
-    <div
-      className="rounded-[32px] border p-5 shadow-sm backdrop-blur-xl"
-      style={{
-        background: 'rgba(255, 253, 248, 0.78)',
-        borderColor: 'rgba(255,255,255,0.42)',
-        color: palette.text,
-      }}
-    >
-      {children}
-    </div>
+    <View style={[styles.cardShell, style]}>
+      <View style={styles.cardFallbackInner} />
+      <View style={styles.cardContent}>{children}</View>
+    </View>
   )
 }
 
-function GlassTag({
-  label,
-  palette,
-}: {
-  label: string
-  palette: ReturnType<typeof getRuntimePalette>
-}) {
+function HomeNewsTag({ label, palette }: { label: string; palette: RuntimePalette }) {
   return (
-    <span
-      className="inline-flex rounded-full border px-3 py-2 text-[11px] font-bold leading-[13px] tracking-[1.1px]"
-      style={{
-        background: 'rgba(255,255,255,0.36)',
-        borderColor: 'rgba(255,255,255,0.28)',
-        color: palette.textSecondary,
-      }}
-    >
-      {label}
-    </span>
+    <View style={styles.newsLabelShell}>
+      <View style={styles.newsLabelFrame}>
+        <View style={styles.newsLabelInner}>
+          <Text style={[styles.newsLabelText, { color: palette.textSecondary }]}>
+            {label}
+          </Text>
+        </View>
+      </View>
+    </View>
   )
 }
 
@@ -785,66 +850,41 @@ function SectionHeader({
 }: {
   action?: string
   label: string
-  palette: ReturnType<typeof getRuntimePalette>
+  palette: RuntimePalette
 }) {
   return (
-    <div className="flex flex-1 items-center justify-between gap-3">
+    <View style={styles.sectionHeaderContent}>
       <SectionLabel label={label} palette={palette} />
-      {action && <span className="text-xs leading-[18px]" style={{ color: palette.textMuted }}>{action}</span>}
-    </div>
+      {action ? (
+        <Text style={[styles.sectionMeta, { color: palette.textMuted }]}>{action}</Text>
+      ) : null}
+    </View>
   )
 }
 
-function SectionLabel({
-  label,
-  palette,
-}: {
-  label: string
-  palette: ReturnType<typeof getRuntimePalette>
-}) {
+function SectionLabel({ label, palette }: { label: string; palette: RuntimePalette }) {
+  return <Text style={[styles.sectionLabel, { color: palette.textMuted }]}>{label}</Text>
+}
+
+function StatusPill({ label, palette }: { label: string; palette: RuntimePalette }) {
   return (
-    <p className="text-[11px] font-bold uppercase leading-[14px] tracking-[1.1px]" style={{ color: palette.textMuted }}>
-      {label}
-    </p>
+    <View style={[styles.statusPill, { borderColor: palette.border }]}>
+      <Text style={[styles.statusPillText, { color: palette.text }]}>{label}</Text>
+    </View>
   )
 }
 
-function StatusPill({
-  label,
-  palette,
-}: {
-  label: string
-  palette: ReturnType<typeof getRuntimePalette>
-}) {
+function Chip({ active, label }: { active: boolean; label: string }) {
   return (
-    <span
-      className="rounded-full border px-3 py-2 text-[11px] font-bold uppercase leading-[14px] tracking-[1px]"
-      style={{
-        background: 'rgba(255,255,255,0.40)',
-        borderColor: palette.border,
-        color: palette.text,
-      }}
-    >
-      {label}
-    </span>
-  )
-}
-
-function Chip({ enabled, label }: { enabled: boolean; label: string }) {
-  return (
-    <span
-      className={`rounded-full border px-3 py-2 text-center text-xs font-bold ${
-        enabled ? 'bg-[#FFFDF8] text-[#171513]' : 'bg-[#F3EFE7] text-[#9B9389]'
-      }`}
-    >
-      {label}
-    </span>
+    <View style={[styles.chip, active ? styles.chipActive : null]}>
+      <Text style={[styles.chipText, active ? styles.chipTextActive : null]}>{label}</Text>
+    </View>
   )
 }
 
 function PriceRow({
   label,
-  strong,
+  strong = false,
   value,
 }: {
   label: string
@@ -852,25 +892,27 @@ function PriceRow({
   value: number
 }) {
   return (
-    <div className={`flex items-center justify-between text-sm ${strong ? 'font-bold' : ''}`}>
-      <span>{label}</span>
-      <span>{money(value)}</span>
-    </div>
+    <View style={styles.priceRow}>
+      <Text style={[styles.priceText, strong ? styles.priceTextStrong : null]}>{label}</Text>
+      <Text style={[styles.priceText, strong ? styles.priceTextStrong : null]}>{formatUsd(value)}</Text>
+    </View>
   )
 }
 
-function AccountRow({ isLast = false, label }: { isLast?: boolean; label: string }) {
+function AccountPageRow({
+  isLast = false,
+  label,
+  palette,
+}: {
+  isLast?: boolean
+  label: string
+  palette: RuntimePalette
+}) {
   return (
-    <button
-      className={`flex h-14 w-full items-center justify-between text-left text-[15px] ${
-        isLast ? '' : 'border-b'
-      }`}
-      style={{ borderColor: fallbackPalette.border }}
-      type="button"
-    >
-      <span>{label}</span>
-      <ChevronRight className="h-4 w-4 opacity-50" />
-    </button>
+    <Pressable style={[styles.accountRow, !isLast ? { borderBottomColor: palette.border, borderBottomWidth: 1 } : null]}>
+      <Text style={[styles.accountRowLabel, { color: palette.text }]}>{label}</Text>
+      <Text style={[styles.accountChevron, { color: palette.textMuted }]}>›</Text>
+    </Pressable>
   )
 }
 
@@ -878,24 +920,775 @@ function getRuntimePalette(config: MobileBuilderProject) {
   const theme = config.appConfig.theme
 
   return {
-    ...fallbackPalette,
-    background: theme.background || fallbackPalette.background,
-    backgroundAlt: theme.backgroundAlt || fallbackPalette.backgroundAlt,
-    surfaceStrong: theme.surface || fallbackPalette.surfaceStrong,
-    surfaceMuted: theme.surfaceMuted || fallbackPalette.surfaceMuted,
-    card: theme.surface || fallbackPalette.card,
-    text: theme.foreground || fallbackPalette.text,
-    textSecondary: theme.foregroundMuted || fallbackPalette.textSecondary,
-    textMuted: theme.muted || fallbackPalette.textMuted,
-    border: theme.border || fallbackPalette.border,
-    primary: theme.primary || fallbackPalette.primary,
-    accent: theme.accent || fallbackPalette.accent,
+    ...uiPalette,
+    background: theme.background || uiPalette.background,
+    backgroundAlt: theme.backgroundAlt || uiPalette.backgroundAlt,
+    surfaceStrong: theme.surface || uiPalette.surfaceStrong,
+    surfaceMuted: theme.surfaceMuted || uiPalette.surfaceMuted,
+    surfaceGlass: theme.surface || uiPalette.surfaceGlass,
+    card: theme.surface || uiPalette.card,
+    text: theme.foreground || uiPalette.text,
+    textSecondary: theme.foregroundMuted || uiPalette.textSecondary,
+    textMuted: theme.muted || uiPalette.textMuted,
+    border: theme.border || uiPalette.border,
+    primary: theme.primary || uiPalette.primary,
+    accent: theme.accent || uiPalette.accent,
+    primaryText: theme.background || uiPalette.primaryText,
   }
 }
 
-function money(cents: number) {
+function formatUsd(cents: number) {
   return new Intl.NumberFormat('en-US', {
     currency: 'USD',
     style: 'currency',
   }).format(cents / 100)
 }
+
+const styles = StyleSheet.create({
+  device: {
+    position: 'relative',
+    height: 710,
+    width: '100%',
+    maxWidth: 350,
+    overflow: 'hidden',
+    borderRadius: 34,
+    borderWidth: 10,
+    borderColor: '#171513',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.24,
+    shadowRadius: 38,
+  },
+  notch: {
+    position: 'absolute',
+    top: 0,
+    left: '50%',
+    zIndex: 50,
+    width: 128,
+    height: 20,
+    marginLeft: -64,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    backgroundColor: '#171513',
+  },
+  screen: {
+    flex: 1,
+    height: '100%',
+  },
+  homeScrollContent: {
+    paddingHorizontal: 20,
+  },
+  menuScrollContent: {
+    paddingHorizontal: 20,
+  },
+  staticContent: {
+    paddingHorizontal: 20,
+  },
+  homeHeaderShell: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 40,
+    paddingHorizontal: 20,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  hero: {
+    paddingTop: 0,
+  },
+  homeTitle: {
+    marginTop: 16,
+    fontSize: 40,
+    lineHeight: 46,
+    fontFamily: 'Georgia',
+    fontWeight: '600',
+    letterSpacing: -1.4,
+  },
+  storeRail: {
+    marginTop: 16,
+    paddingBottom: 2,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  storeCopy: {
+    flex: 1,
+  },
+  storeTitle: {
+    marginTop: 2,
+    fontSize: 19,
+    lineHeight: 25,
+    letterSpacing: 1.9,
+    fontFamily: 'Georgia',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  inlineLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingBottom: 2,
+  },
+  inlineLinkText: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '600',
+  },
+  cardGrid: {
+    paddingTop: 12,
+    gap: 14,
+  },
+  previewSection: {
+    paddingTop: 8,
+  },
+  newsCard: {
+    width: '100%',
+    minHeight: 142,
+  },
+  newsCardContent: {
+    minHeight: 142,
+    justifyContent: 'space-between',
+    gap: 14,
+  },
+  newsCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  newsCopy: {
+    gap: 6,
+  },
+  newsTitle: {
+    fontSize: 24,
+    lineHeight: 28,
+    fontFamily: 'Georgia',
+    fontWeight: '600',
+    letterSpacing: -0.5,
+  },
+  newsBody: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  newsNote: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+  newsLabelShell: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+  },
+  newsLabelFrame: {
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  newsLabelInner: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.36)',
+    borderColor: 'rgba(255,255,255,0.28)',
+  },
+  newsLabelText: {
+    fontSize: 11,
+    lineHeight: 13,
+    letterSpacing: 1.1,
+    fontWeight: '700',
+  },
+  menuHeaderShell: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    paddingTop: 40,
+    paddingHorizontal: 20,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  headerCopy: {
+    flex: 1,
+  },
+  pickupMetaWrap: {
+    overflow: 'hidden',
+    height: 18,
+    marginBottom: 6,
+  },
+  pickupMeta: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  locationText: {
+    marginTop: 3,
+    fontSize: 19,
+    lineHeight: 24,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    fontFamily: 'Georgia',
+    fontWeight: '600',
+  },
+  tabsWrap: {
+    overflow: 'hidden',
+    height: 34,
+    marginTop: 9,
+  },
+  tabRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  activeTab: {
+    fontSize: 28,
+    lineHeight: 32,
+    fontFamily: 'Georgia',
+    fontWeight: '600',
+  },
+  menuSectionBlock: {
+    marginTop: 14,
+  },
+  sectionStickyHeader: {
+    marginTop: 0,
+  },
+  sectionHeaderRow: {
+    paddingBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sectionHeaderContent: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+  },
+  sectionMeta: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  chevronText: {
+    fontSize: 16,
+    lineHeight: 18,
+  },
+  sectionList: {
+    borderTopWidth: 1,
+  },
+  menuRow: {
+    minHeight: 132,
+  },
+  menuRowMain: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+    width: '100%',
+  },
+  menuImage: {
+    width: 108,
+    height: 132,
+    backgroundColor: '#D5D4CE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  menuImagePhoto: {
+    width: '100%',
+    height: '100%',
+  },
+  menuArtworkFallback: {
+    fontSize: 22,
+  },
+  menuBodyWrap: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 132,
+    paddingTop: 0,
+    paddingBottom: 0,
+    justifyContent: 'center',
+  },
+  menuBodyWrapWithDivider: {
+    borderBottomWidth: 1,
+  },
+  menuBodyContent: {
+    minHeight: 132,
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+  menuCopy: {
+    justifyContent: 'center',
+    gap: 1,
+  },
+  menuTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  menuTitle: {
+    flex: 1,
+    fontSize: 16,
+    lineHeight: 20,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    fontWeight: '500',
+  },
+  menuDescription: {
+    fontSize: 12,
+    lineHeight: 14,
+  },
+  menuMeta: {
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    fontFamily: 'Georgia',
+    fontWeight: '400',
+  },
+  addButton: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  addButtonText: {
+    fontSize: 12,
+    lineHeight: 14,
+    fontWeight: '700',
+  },
+  reviewOrderButton: {
+    marginTop: 16,
+    marginBottom: 8,
+    minHeight: 48,
+    borderRadius: 999,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+  },
+  reviewOrderText: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
+  pageHeaderFloating: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 48,
+    paddingHorizontal: 20,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    zIndex: 10,
+  },
+  pageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 16,
+    paddingBottom: 11,
+  },
+  pageCopy: {
+    flex: 1,
+  },
+  pageTitle: {
+    marginTop: 3,
+    fontSize: 17,
+    lineHeight: 18,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    fontFamily: 'Georgia',
+    fontWeight: '600',
+  },
+  sectionBlock: {
+    marginTop: 28,
+  },
+  ordersSectionHeader: {
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  sectionMessage: {
+    marginTop: 12,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  activePanelShell: {
+    borderRadius: 36,
+  },
+  activeTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  activeAmount: {
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    fontFamily: 'Georgia',
+    fontWeight: '400',
+  },
+  activeTitle: {
+    marginTop: 18,
+    fontSize: 28,
+    lineHeight: 32,
+    letterSpacing: -0.9,
+    fontFamily: 'Georgia',
+    fontWeight: '700',
+  },
+  activeBody: {
+    marginTop: 10,
+    fontSize: 15,
+    lineHeight: 24,
+  },
+  pickupCodeBlock: {
+    marginTop: 22,
+    paddingTop: 18,
+    borderTopWidth: 1,
+  },
+  metricLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+  },
+  pickupCodeValue: {
+    marginTop: 8,
+    fontSize: 34,
+    lineHeight: 40,
+    letterSpacing: 1.2,
+    fontFamily: 'Georgia',
+    fontWeight: '700',
+  },
+  cartRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 10,
+  },
+  cartCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  cartTitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+  },
+  cartMeta: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  removeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkoutCard: {
+    marginTop: 8,
+  },
+  priceRows: {
+    marginTop: 14,
+    gap: 8,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  priceText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: uiPalette.text,
+  },
+  priceTextStrong: {
+    fontWeight: '700',
+  },
+  totalRow: {
+    marginTop: 4,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  paymentGrid: {
+    marginTop: 16,
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  primaryButton: {
+    marginTop: 18,
+    minHeight: 48,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryButtonText: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
+  heroCard: {
+    marginTop: 18,
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  heroCopy: {
+    flex: 1,
+  },
+  heroTitle: {
+    marginTop: 10,
+    fontSize: 30,
+    lineHeight: 34,
+    letterSpacing: -0.8,
+    fontFamily: 'Georgia',
+    fontWeight: '700',
+  },
+  pointsWrap: {
+    marginTop: 22,
+    paddingTop: 18,
+    borderTopWidth: 1,
+  },
+  pointsLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+  },
+  pointsValue: {
+    marginTop: 10,
+    fontSize: 46,
+    lineHeight: 50,
+    letterSpacing: -1.6,
+    fontFamily: 'Georgia',
+    fontWeight: '700',
+  },
+  pointsMeta: {
+    marginTop: 10,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  listSection: {
+    marginTop: 28,
+  },
+  pageList: {
+    marginTop: 12,
+    borderTopWidth: 1,
+  },
+  accountRow: {
+    minHeight: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  accountRowLabel: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  accountChevron: {
+    fontSize: 22,
+    lineHeight: 24,
+  },
+  cardShell: {
+    position: 'relative',
+    borderRadius: 32,
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 22,
+  },
+  cardFallbackInner: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 253, 248, 0.78)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.42)',
+    borderRadius: 32,
+  },
+  cardContent: {
+    padding: 22,
+  },
+  statusPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.40)',
+  },
+  statusPillText: {
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+  },
+  chip: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: uiPalette.border,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: uiPalette.surfaceMuted,
+  },
+  chipActive: {
+    backgroundColor: uiPalette.surfaceStrong,
+  },
+  chipText: {
+    fontSize: 12,
+    lineHeight: 14,
+    fontWeight: '700',
+    color: uiPalette.textMuted,
+  },
+  chipTextActive: {
+    color: uiPalette.text,
+  },
+  pressed: {
+    opacity: 0.84,
+  },
+  tabShell: {
+    position: 'absolute',
+    left: 18,
+    right: 18,
+    bottom: TAB_BAR_BOTTOM,
+    height: TAB_BAR_HEIGHT,
+    zIndex: 40,
+  },
+  dockWrap: {
+    flex: 1,
+    borderRadius: 999,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.08,
+    shadowRadius: 28,
+  },
+  blurShell: {
+    flex: 1,
+    borderRadius: 999,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 253, 248, 0.72)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.42)',
+  },
+  dockInner: {
+    flex: 1,
+    padding: 3,
+    borderRadius: 999,
+  },
+  tabRowRuntime: {
+    position: 'relative',
+    flex: 1,
+    flexDirection: 'row',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.88)',
+  },
+  tabSlot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  tabIcon: {
+    height: 24,
+    lineHeight: 24,
+    fontSize: 21,
+  },
+  tabIconMenu: {
+    fontSize: 24,
+  },
+  tabIconActive: {
+    color: 'rgba(18, 18, 18, 0.96)',
+  },
+  tabIconBase: {
+    color: 'rgba(60, 60, 67, 0.72)',
+  },
+  tabLabel: {
+    fontSize: 11,
+    lineHeight: 13,
+    fontWeight: '600',
+  },
+  tabLabelActive: {
+    color: 'rgba(18, 18, 18, 0.96)',
+  },
+  tabLabelBase: {
+    color: 'rgba(60, 60, 67, 0.72)',
+  },
+  cartDot: {
+    position: 'absolute',
+    top: -2,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+  },
+  tabBarDepthBelowFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 94,
+    background:
+      'linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.008) 45%, rgba(0,0,0,0.03) 70%, rgba(0,0,0,0.065))',
+  },
+  deviceTabDepth: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 96,
+    background:
+      'linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.008) 45%, rgba(0,0,0,0.03) 70%, rgba(0,0,0,0.065))',
+  },
+})

@@ -8,7 +8,7 @@
 - Store operations controls
 - Seeded menu and home-card editing
 - Live mobile preview
-- Interactive in-page mobile simulator with tabs, cart, checkout preview, and account screen
+- React Native Web in-page mobile simulator with tabs, cart, checkout preview, and account screen
 - Advanced JSON editor/import path
 - FastAPI validation and SQLite persistence
 - Backend tests for validation and CRUD behavior
@@ -22,7 +22,7 @@
 - Export separate files for `app-config.json`, `store-config.json`, `menu.json`, `home-cards.json`, and `build-profile.json`.
 - Add screenshot capture for demo docs.
 - Add optional Expo Snack export for sharing a generated standalone example.
-- Evaluate React Native Web for a closer React Native component runtime while keeping the preview embedded on the page.
+- Move shared simulator screens into a separate preview package so future production Nomly screens can be copied or adapted with less friction.
 
 ## Gazelle Integration Path
 
