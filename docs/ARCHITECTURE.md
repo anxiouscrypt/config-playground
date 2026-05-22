@@ -5,6 +5,7 @@
 - **React configurator** provides form-first controls for client identity, brand theme, capabilities, store operations, menu content, home cards, and release metadata.
 - **Advanced JSON source view** keeps the developer workflow from the original playground and allows direct inspection/import of the full project payload.
 - **React Native Web mobile runtime** turns the builder project into an interactive in-page app using React Native primitives: `View`, `Text`, `Pressable`, `ScrollView`, `Image`, and `StyleSheet`.
+- **Mobile infrastructure shims** provide standalone browser-safe equivalents for the Gazelle app’s safe area, gesture root, glass/blur, gradient, icon, navigation metric, UI system, and pill tab bar layers.
 - **FastAPI backend** validates and persists app projects.
 - **Pydantic models** mirror the important Gazelle mobile/catalog contracts: `appConfig`, `storeConfig`, `menu`, `homeCards`, and build metadata.
 - **SQLite database** stores local drafts as JSON payloads keyed by project ID.
@@ -82,5 +83,5 @@ This repo was researched against the Gazelle mobile platform contracts and catal
 - No direct write-back to the Gazelle catalog/admin APIs.
 - No asset upload pipeline for icons, splash images, or menu item photos.
 - No version history or approval workflow.
-- The simulator renders React Native components through React Native Web. It is still not a native Expo/iOS/Android runtime.
+- The simulator renders React Native components through React Native Web. Native-only Expo modules are represented by local web shims, so it is still not a native Expo/iOS/Android runtime.
 - The menu editor only edits the seeded sample rows; a production builder needs add/remove/reorder controls.

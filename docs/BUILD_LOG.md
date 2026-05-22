@@ -46,3 +46,10 @@
 - Aliased `react-native` to `react-native-web` in Vite.
 - Ported the simulator shell to `View`, `Text`, `Pressable`, `ScrollView`, `Image`, and `StyleSheet`.
 - Matched the Gazelle mobile app’s base Home/Menu/Orders/Account layout patterns more closely while keeping the project standalone.
+
+## Phase 8: Mobile Infrastructure Shims
+
+- Added standalone equivalents for the Gazelle mobile app infrastructure: safe-area provider, gesture-handler root, glass/blur shims, linear-gradient shim, icon shim, navigation metrics, shared UI primitives, and floating pill tab bar.
+- Added scroll-driven header interpolation for the Home and Menu simulator screens.
+- Added animated tab indicator transitions in the in-page pill tab bar.
+- Kept native-only Expo modules out of the public proof of concept while preserving familiar import and component boundaries for future screen ports.

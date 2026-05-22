@@ -30,6 +30,8 @@ declare module 'react-native' {
   export const ScrollView: (props: {
     children?: ReactNode
     contentContainerStyle?: StyleProp
+    onScroll?: (event: { nativeEvent: { contentOffset: { y: number } } }) => void
+    scrollEventThrottle?: number
     showsVerticalScrollIndicator?: boolean
     style?: StyleProp
   }) => JSX.Element

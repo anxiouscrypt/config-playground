@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import type { AppTab, MenuItem, MobileBuilderProject } from '../lib/types'
+import { ClassicPillTabBar as RuntimePillTabBar } from './navigation/ClassicPillTabBar'
+import { GestureHandlerRootView } from './platform/gestureHandler'
+import { SafeAreaProvider } from './platform/safeArea'
 
 type MobileRuntimeProps = {
   config: MobileBuilderProject
@@ -43,20 +46,6 @@ const uiPalette = {
   charcoal: '#1D1A17',
   success: '#4F7A63',
   warning: '#A46C2C',
-}
-
-const tabLabels: Record<AppTab, string> = {
-  home: 'Home',
-  menu: 'Menu',
-  orders: 'Orders',
-  account: 'Account',
-}
-
-const tabGlyphs: Record<AppTab, string> = {
-  home: '⌂',
-  menu: '☕',
-  orders: '▤',
-  account: '◯',
 }
 
 export function MobileRuntime({ config }: MobileRuntimeProps) {
@@ -135,49 +124,54 @@ export function MobileRuntime({ config }: MobileRuntimeProps) {
   }
 
   return (
-    <View style={[styles.device, { backgroundColor: palette.background }]}>
-      <View style={styles.notch} />
-      {currentTab === 'menu' ? (
-        <MenuScreen
-          addItem={addItem}
-          cartCount={cartCount}
-          categories={visibleMenu}
-          config={config}
-          goToOrders={() => setActiveTab('orders')}
-          palette={palette}
-        />
-      ) : currentTab === 'orders' ? (
-        <OrdersScreen
-          cartItems={cartItems}
-          config={config}
-          orderPlaced={orderPlaced}
-          palette={palette}
-          removeItem={removeItem}
-          setOrderPlaced={setOrderPlaced}
-          subtotalCents={subtotalCents}
-          taxCents={taxCents}
-          totalCents={totalCents}
-        />
-      ) : currentTab === 'account' ? (
-        <AccountScreen config={config} palette={palette} />
-      ) : (
-        <HomeScreen
-          cards={visibleCards}
-          categories={visibleMenu}
-          config={config}
-          goToMenu={() => setActiveTab('menu')}
-          palette={palette}
-        />
-      )}
-      <TabBarDepth />
-      <ClassicPillTabBar
-        activeTab={currentTab}
-        cartCount={cartCount}
-        enabledTabs={config.appConfig.enabledTabs}
-        palette={palette}
-        setActiveTab={setActiveTab}
-      />
-    </View>
+    <GestureHandlerRootView>
+      <View style={styles.runtimeRoot}>
+        <SafeAreaProvider>
+          <View style={[styles.device, { backgroundColor: palette.background }]}>
+          <View style={styles.notch} />
+          {currentTab === 'menu' ? (
+            <MenuScreen
+              addItem={addItem}
+              cartCount={cartCount}
+              categories={visibleMenu}
+              config={config}
+              goToOrders={() => setActiveTab('orders')}
+              palette={palette}
+            />
+          ) : currentTab === 'orders' ? (
+            <OrdersScreen
+              cartItems={cartItems}
+              config={config}
+              orderPlaced={orderPlaced}
+              palette={palette}
+              removeItem={removeItem}
+              setOrderPlaced={setOrderPlaced}
+              subtotalCents={subtotalCents}
+              taxCents={taxCents}
+              totalCents={totalCents}
+            />
+          ) : currentTab === 'account' ? (
+            <AccountScreen config={config} palette={palette} />
+          ) : (
+            <HomeScreen
+              cards={visibleCards}
+              categories={visibleMenu}
+              config={config}
+              goToMenu={() => setActiveTab('menu')}
+              palette={palette}
+            />
+          )}
+          <TabBarDepth />
+          <RuntimePillTabBar
+            activeTab={currentTab}
+            cartCount={cartCount}
+            enabledTabs={config.appConfig.enabledTabs}
+            setActiveTab={setActiveTab}
+          />
+          </View>
+        </SafeAreaProvider>
+      </View>
+    </GestureHandlerRootView>
   )
 }
 
@@ -194,11 +188,21 @@ function HomeScreen({
   goToMenu: () => void
   palette: RuntimePalette
 }) {
+  const [scrollY, setScrollY] = useState(0)
+  const progress = clamp(scrollY / 64, 0, 1)
+  const headerHeight = interpolateNumber(HOME_HEADER_EXPANDED_HEIGHT, 116, progress)
+  const titleSize = interpolateNumber(40, 28, progress)
+  const titleLineHeight = interpolateNumber(46, 32, progress)
+  const titleMarginTop = interpolateNumber(16, 6, progress)
+  const storeRailMarginTop = interpolateNumber(16, 10, progress)
+
   return (
     <View style={[styles.screen, { backgroundColor: palette.background }]}>
       <ScreenBackdrop palette={palette} />
       <ScrollView
         showsVerticalScrollIndicator={false}
+        onScroll={(event) => setScrollY(event.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={16}
         contentContainerStyle={[
           styles.homeScrollContent,
           { paddingTop: HOME_HEADER_EXPANDED_HEIGHT, paddingBottom: 132 },
@@ -254,7 +258,7 @@ function HomeScreen({
         style={[
           styles.homeHeaderShell,
           {
-            height: HOME_HEADER_EXPANDED_HEIGHT,
+            height: headerHeight,
             backgroundColor: config.appConfig.header.background,
           },
         ]}
@@ -263,14 +267,19 @@ function HomeScreen({
           <Text
             style={[
               styles.homeTitle,
-              { color: config.appConfig.header.foreground ?? palette.text },
+              {
+                color: config.appConfig.header.foreground ?? palette.text,
+                fontSize: titleSize,
+                lineHeight: titleLineHeight,
+                marginTop: titleMarginTop,
+              },
             ]}
           >
             {config.appConfig.brand.brandName}
           </Text>
         </View>
 
-        <View style={styles.storeRail}>
+        <View style={[styles.storeRail, { marginTop: storeRailMarginTop }]}>
           <View style={styles.storeCopy}>
             <Text
               numberOfLines={1}
@@ -317,6 +326,13 @@ function MenuScreen({
   goToOrders: () => void
   palette: RuntimePalette
 }) {
+  const [scrollY, setScrollY] = useState(0)
+  const progress = clamp(scrollY / 78, 0, 1)
+  const headerHeight = interpolateNumber(MENU_HEADER_EXPANDED_HEIGHT, 76, progress)
+  const pickupOpacity = interpolateNumber(1, 0, progress)
+  const tabOpacity = interpolateNumber(1, 0, progress)
+  const locationSize = interpolateNumber(19, 17, progress)
+
   const sections = [
     {
       id: 'featured',
@@ -335,6 +351,8 @@ function MenuScreen({
       <ScreenBackdrop palette={palette} />
       <ScrollView
         showsVerticalScrollIndicator={false}
+        onScroll={(event) => setScrollY(event.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={16}
         contentContainerStyle={[
           styles.menuScrollContent,
           { paddingTop: MENU_HEADER_EXPANDED_HEIGHT, paddingBottom: 132 },
@@ -393,14 +411,14 @@ function MenuScreen({
         style={[
           styles.menuHeaderShell,
           {
-            height: MENU_HEADER_EXPANDED_HEIGHT,
+            height: headerHeight,
             backgroundColor: config.appConfig.header.background,
           },
         ]}
       >
         <View style={styles.menuHeader}>
           <View style={styles.headerCopy}>
-            <View style={styles.pickupMetaWrap}>
+            <View style={[styles.pickupMetaWrap, { opacity: pickupOpacity }]}>
               <Text
                 style={[
                   styles.pickupMeta,
@@ -414,14 +432,17 @@ function MenuScreen({
               numberOfLines={1}
               style={[
                 styles.locationText,
-                { color: config.appConfig.header.foreground ?? palette.text },
+                {
+                  color: config.appConfig.header.foreground ?? palette.text,
+                  fontSize: locationSize,
+                },
               ]}
             >
               {config.appConfig.brand.locationName}
             </Text>
           </View>
         </View>
-        <View style={styles.tabsWrap}>
+        <View style={[styles.tabsWrap, { opacity: tabOpacity }]}>
           <View style={styles.tabRow}>
             <Text
               style={[
@@ -724,80 +745,6 @@ function MenuItemRow({
   )
 }
 
-function ClassicPillTabBar({
-  activeTab,
-  cartCount,
-  enabledTabs,
-  palette,
-  setActiveTab,
-}: {
-  activeTab: AppTab
-  cartCount: number
-  enabledTabs: AppTab[]
-  palette: RuntimePalette
-  setActiveTab: (tab: AppTab) => void
-}) {
-  const activeIndex = Math.max(enabledTabs.indexOf(activeTab), 0)
-  const routeCount = Math.max(enabledTabs.length, 1)
-
-  return (
-    <View pointerEvents="box-none" style={styles.tabShell}>
-      <View style={styles.dockWrap}>
-        <View style={styles.blurShell}>
-          <View style={styles.dockInner}>
-            <View style={styles.tabRowRuntime}>
-              <View
-                pointerEvents="none"
-                style={[
-                  styles.activeIndicator,
-                  {
-                    width: `${100 / routeCount}%`,
-                    transform: [{ translateX: `${activeIndex * 100}%` }],
-                  },
-                ]}
-              />
-              {enabledTabs.map((tab) => {
-                const focused = activeTab === tab
-                return (
-                  <Pressable
-                    key={tab}
-                    onPress={() => setActiveTab(tab)}
-                    style={styles.tabSlot}
-                  >
-                    <View style={styles.tabContent}>
-                      <Text
-                        style={[
-                          styles.tabIcon,
-                          focused ? styles.tabIconActive : styles.tabIconBase,
-                          tab === 'menu' ? styles.tabIconMenu : null,
-                        ]}
-                      >
-                        {tabGlyphs[tab]}
-                      </Text>
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.tabLabel,
-                          focused ? styles.tabLabelActive : styles.tabLabelBase,
-                        ]}
-                      >
-                        {tabLabels[tab]}
-                      </Text>
-                      {tab === 'orders' && cartCount > 0 ? (
-                        <View style={[styles.cartDot, { backgroundColor: palette.accent }]} />
-                      ) : null}
-                    </View>
-                  </Pressable>
-                )
-              })}
-            </View>
-          </View>
-        </View>
-      </View>
-    </View>
-  )
-}
-
 function ScreenBackdrop({ palette }: { palette: RuntimePalette }) {
   return <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { backgroundColor: palette.background }]} />
 }
@@ -944,7 +891,20 @@ function formatUsd(cents: number) {
   }).format(cents / 100)
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function interpolateNumber(from: number, to: number, progress: number) {
+  return from + (to - from) * progress
+}
+
 const styles = StyleSheet.create({
+  runtimeRoot: {
+    height: 710,
+    width: '100%',
+    maxWidth: 350,
+  },
   device: {
     position: 'relative',
     height: 710,
