@@ -1,21 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import {
-  Bell,
-  CheckCircle2,
-  ChevronRight,
-  Coffee,
-  CreditCard,
-  Home,
-  Menu,
-  Minus,
-  Plus,
-  ReceiptText,
-  Search,
-  ShoppingBag,
-  Sparkles,
-  UserRound,
-} from 'lucide-react'
+import { ChevronDown, ChevronRight, Coffee, Home, Minus, Plus, ReceiptText, UserRound } from 'lucide-react'
 import type { AppTab, MenuItem, MobileBuilderProject } from '../lib/types'
 
 type MobileRuntimeProps = {
@@ -31,9 +16,27 @@ type RuntimeCartItem = {
 
 const tabIcons: Record<AppTab, typeof Home> = {
   home: Home,
-  menu: Menu,
+  menu: Coffee,
   orders: ReceiptText,
   account: UserRound,
+}
+
+const fallbackPalette = {
+  background: '#F7F4ED',
+  backgroundAlt: '#F0ECE4',
+  surfaceStrong: '#FFFDF8',
+  surfaceMuted: '#F3EFE7',
+  card: '#FFFDF8',
+  text: '#171513',
+  textSecondary: '#605B55',
+  textMuted: '#9B9389',
+  border: 'rgba(23, 21, 19, 0.08)',
+  borderStrong: 'rgba(23, 21, 19, 0.14)',
+  primary: '#1E1B18',
+  primaryText: '#FFFFFF',
+  accent: '#2D2823',
+  success: '#4F7A63',
+  warning: '#A46C2C',
 }
 
 export function MobileRuntime({ config }: MobileRuntimeProps) {
@@ -43,6 +46,10 @@ export function MobileRuntime({ config }: MobileRuntimeProps) {
   const [cartItems, setCartItems] = useState<RuntimeCartItem[]>([])
   const [orderPlaced, setOrderPlaced] = useState(false)
 
+  const palette = getRuntimePalette(config)
+  const currentTab = config.appConfig.enabledTabs.includes(activeTab)
+    ? activeTab
+    : (config.appConfig.enabledTabs[0] ?? 'home')
   const visibleMenu = useMemo(
     () =>
       config.menu.categories
@@ -53,7 +60,6 @@ export function MobileRuntime({ config }: MobileRuntimeProps) {
         .filter((category) => category.items.length > 0),
     [config.menu.categories],
   )
-
   const visibleCards = useMemo(
     () =>
       config.homeCards.cards
@@ -71,9 +77,6 @@ export function MobileRuntime({ config }: MobileRuntimeProps) {
     subtotalCents * (config.storeConfig.taxRateBasisPoints / 10000),
   )
   const totalCents = subtotalCents + taxCents
-  const currentTab = config.appConfig.enabledTabs.includes(activeTab)
-    ? activeTab
-    : (config.appConfig.enabledTabs[0] ?? 'home')
 
   function addItem(item: MenuItem) {
     setOrderPlaced(false)
@@ -114,16 +117,18 @@ export function MobileRuntime({ config }: MobileRuntimeProps) {
     currentTab === 'menu' ? (
       <MenuScreen
         addItem={addItem}
-        categories={visibleMenu}
         cartCount={cartCount}
+        categories={visibleMenu}
         config={config}
         goToOrders={() => setActiveTab('orders')}
+        palette={palette}
       />
     ) : currentTab === 'orders' ? (
       <OrdersScreen
         cartItems={cartItems}
         config={config}
         orderPlaced={orderPlaced}
+        palette={palette}
         removeItem={removeItem}
         setOrderPlaced={setOrderPlaced}
         subtotalCents={subtotalCents}
@@ -131,117 +136,40 @@ export function MobileRuntime({ config }: MobileRuntimeProps) {
         totalCents={totalCents}
       />
     ) : currentTab === 'account' ? (
-      <AccountScreen config={config} />
+      <AccountScreen config={config} palette={palette} />
     ) : (
       <HomeScreen
         cards={visibleCards}
         categories={visibleMenu}
         config={config}
         goToMenu={() => setActiveTab('menu')}
+        palette={palette}
       />
     )
 
   return (
     <div
-      className="flex h-[710px] w-full max-w-[350px] flex-col overflow-hidden rounded-[34px] border-[10px] border-[#171513] shadow-2xl"
+      className="relative h-[710px] w-full max-w-[350px] overflow-hidden rounded-[34px] border-[10px] border-[#171513] shadow-2xl"
       style={{
-        background: config.appConfig.theme.background,
-        color: config.appConfig.theme.foreground,
+        background: palette.background,
+        color: palette.text,
         fontFamily: config.appConfig.theme.fontFamily || 'system-ui',
       }}
     >
-      <StatusBar config={config} />
-      <RuntimeHeader activeTab={currentTab} cartCount={cartCount} config={config} />
-      <div className="min-h-0 flex-1 overflow-y-auto">{screen}</div>
+      <div
+        className="absolute left-1/2 top-0 z-40 h-5 w-32 -translate-x-1/2 rounded-b-2xl bg-[#171513]"
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 overflow-y-auto pb-28">{screen}</div>
+      <TabBarDepth palette={palette} />
       <RuntimeTabs
         activeTab={currentTab}
         cartCount={cartCount}
         config={config}
+        palette={palette}
         setActiveTab={setActiveTab}
       />
     </div>
-  )
-}
-
-function StatusBar({ config }: { config: MobileBuilderProject }) {
-  return (
-    <div
-      className="flex h-7 items-center justify-between px-6 text-[11px] font-semibold"
-      style={{
-        background: config.appConfig.header.background,
-        color: config.appConfig.header.foreground ?? config.appConfig.theme.foreground,
-      }}
-    >
-      <span>9:41</span>
-      <span className="tracking-wide">LTE 100%</span>
-    </div>
-  )
-}
-
-function RuntimeHeader({
-  activeTab,
-  cartCount,
-  config,
-}: {
-  activeTab: AppTab
-  cartCount: number
-  config: MobileBuilderProject
-}) {
-  const theme = config.appConfig.theme
-  const title =
-    activeTab === 'menu'
-      ? 'Menu'
-      : activeTab === 'orders'
-        ? 'Orders'
-        : activeTab === 'account'
-          ? 'Account'
-          : config.appConfig.brand.brandName
-
-  return (
-    <header
-      className="px-5 pb-4 pt-2"
-      style={{
-        background: config.appConfig.header.background,
-        color: config.appConfig.header.foreground ?? theme.foreground,
-      }}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-xs font-semibold uppercase tracking-wide opacity-60">
-            {config.appConfig.brand.marketLabel}
-          </p>
-          <h2
-            className="mt-1 truncate text-2xl font-semibold leading-tight"
-            style={{ fontFamily: theme.displayFontFamily || theme.fontFamily }}
-          >
-            {title}
-          </h2>
-          <p className="mt-1 truncate text-sm opacity-70">
-            {config.appConfig.brand.locationName}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <IconButton config={config} label="Notifications">
-            <Bell className="h-4 w-4" />
-          </IconButton>
-          <div
-            className="relative flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{ background: theme.surface }}
-            title="Cart"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            {cartCount > 0 && (
-              <span
-                className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold"
-                style={{ background: theme.accent, color: theme.background }}
-              >
-                {cartCount}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </header>
   )
 }
 
@@ -250,72 +178,85 @@ function HomeScreen({
   categories,
   config,
   goToMenu,
+  palette,
 }: {
   cards: MobileBuilderProject['homeCards']['cards']
   categories: MobileBuilderProject['menu']['categories']
   config: MobileBuilderProject
   goToMenu: () => void
+  palette: ReturnType<typeof getRuntimePalette>
 }) {
-  const theme = config.appConfig.theme
-
   return (
-    <div className="space-y-4 px-4 pb-5">
-      <StoreStatus config={config} />
-
-      {cards[0] && (
-        <section
-          className="rounded-2xl p-4"
-          style={{ background: theme.primary, color: theme.background }}
-        >
-          <p className="text-xs font-semibold uppercase tracking-wide opacity-70">
-            {cards[0].label}
+    <ScreenShell palette={palette}>
+      <div
+        className="sticky top-0 z-20 px-5 pb-4 pt-10"
+        style={{
+          background: config.appConfig.header.background || palette.background,
+          color: config.appConfig.header.foreground ?? palette.text,
+        }}
+      >
+        <h2 className="font-serif text-[40px] font-semibold leading-[46px]">
+          {config.appConfig.brand.brandName}
+        </h2>
+        <div className="mt-4 flex items-end justify-between gap-4">
+          <p className="min-w-0 truncate font-serif text-[19px] font-semibold uppercase leading-[25px] tracking-[1.9px]">
+            {config.appConfig.brand.locationName}
           </p>
-          <h3 className="mt-2 text-xl font-semibold leading-tight">
-            {cards[0].title}
-          </h3>
-          <p className="mt-2 text-sm opacity-85">{cards[0].body}</p>
           <button
-            className="mt-4 h-10 rounded-full px-4 text-sm font-semibold"
-            style={{ background: theme.background, color: theme.foreground }}
+            className="flex h-7 items-center gap-1 text-sm font-semibold"
             type="button"
             onClick={goToMenu}
           >
-            Start order
+            Menu
+            <ChevronRight className="h-4 w-4" />
           </button>
-        </section>
-      )}
+        </div>
+      </div>
 
-      <section>
-        <SectionHeader action="View all" title="Featured menu" />
-        <div className="mt-3 space-y-2">
-          {categories.slice(0, 2).map((category) => (
-            <div
-              className="rounded-2xl p-3"
-              key={category.id}
-              style={{ background: theme.surface }}
-            >
-              <p className="text-sm font-semibold">{category.title}</p>
-              <p className="mt-1 text-xs" style={{ color: theme.foregroundMuted }}>
-                {category.items
-                  .slice(0, 3)
-                  .map((item) => item.name)
-                  .join(', ')}
-              </p>
+      <div className="space-y-3 px-5 pt-3">
+        {cards.map((card) => (
+          <GlassCard key={card.cardId} palette={palette}>
+            <div className="flex min-h-[142px] flex-col justify-between gap-4">
+              <div>
+                <GlassTag label={card.label} palette={palette} />
+              </div>
+              <div>
+                <h3 className="font-serif text-2xl font-semibold leading-7">
+                  {card.title}
+                </h3>
+                <p className="mt-2 text-[15px] leading-[22px]" style={{ color: palette.textSecondary }}>
+                  {card.body}
+                </p>
+              </div>
+              {card.note && (
+                <p className="text-[13px] font-medium leading-[18px]" style={{ color: palette.textMuted }}>
+                  {card.note}
+                </p>
+              )}
             </div>
-          ))}
-        </div>
-      </section>
+          </GlassCard>
+        ))}
 
-      <section>
-        <SectionHeader title="Experience" />
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <Capability enabled={config.appConfig.featureFlags.loyalty} label="Loyalty" />
-          <Capability enabled={config.appConfig.featureFlags.orderTracking} label="Tracking" />
-          <Capability enabled={config.appConfig.paymentCapabilities.applePay} label="Apple Pay" />
-          <Capability enabled={config.appConfig.featureFlags.pushNotifications} label="Push alerts" />
-        </div>
-      </section>
-    </div>
+        <section className="pt-2">
+          <SectionHeader label="Featured" palette={palette} />
+          <div className="border-t" style={{ borderColor: palette.border }}>
+            {categories
+              .flatMap((category) => category.items)
+              .slice(0, 2)
+              .map((item, index, items) => (
+                <MenuRow
+                  key={item.id}
+                  isLast={index === items.length - 1}
+                  item={item}
+                  onAdd={() => undefined}
+                  palette={palette}
+                  showAdd={false}
+                />
+              ))}
+          </div>
+        </section>
+      </div>
+    </ScreenShell>
   )
 }
 
@@ -325,78 +266,67 @@ function MenuScreen({
   categories,
   config,
   goToOrders,
+  palette,
 }: {
   addItem: (item: MenuItem) => void
   cartCount: number
   categories: MobileBuilderProject['menu']['categories']
   config: MobileBuilderProject
   goToOrders: () => void
+  palette: ReturnType<typeof getRuntimePalette>
 }) {
-  const theme = config.appConfig.theme
+  const sections = [
+    {
+      id: 'featured',
+      title: 'Featured',
+      items: categories.flatMap((category) => category.items).slice(0, 4),
+    },
+    ...categories.map((category) => ({
+      id: category.id,
+      title: category.title,
+      items: category.items,
+    })),
+  ]
 
   return (
-    <div className="space-y-4 px-4 pb-5">
-      <div
-        className="flex h-11 items-center gap-2 rounded-full px-4 text-sm"
-        style={{ background: theme.surface, color: theme.foregroundMuted }}
+    <ScreenShell palette={palette}>
+      <FloatingPageHeader
+        background={config.appConfig.header.background}
+        foreground={config.appConfig.header.foreground ?? palette.text}
+        title={config.appConfig.brand.locationName}
+        eyebrow={`Estimated pick-up is ${config.storeConfig.prepEtaMinutes} min`}
       >
-        <Search className="h-4 w-4" />
-        Search menu
-      </div>
+        <p className="font-serif text-[28px] font-semibold leading-8">Menu</p>
+      </FloatingPageHeader>
 
-      {categories.map((category) => (
-        <section key={category.id}>
-          <SectionHeader title={category.title} />
-          <div className="mt-3 space-y-3">
-            {category.items.map((item) => (
-              <article
-                className="rounded-2xl p-3"
-                key={item.id}
-                style={{ background: theme.surface }}
-              >
-                <div className="flex gap-3">
-                  <div
-                    className="flex h-16 w-16 flex-none items-center justify-center rounded-xl"
-                    style={{ background: theme.surfaceMuted }}
-                  >
-                    <Coffee className="h-6 w-6" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h3 className="truncate text-sm font-semibold">{item.name}</h3>
-                        <p
-                          className="mt-1 line-clamp-2 text-xs"
-                          style={{ color: theme.foregroundMuted }}
-                        >
-                          {item.description}
-                        </p>
-                      </div>
-                      <span className="text-sm font-semibold">
-                        {money(item.priceCents)}
-                      </span>
-                    </div>
-                    <button
-                      className="mt-3 inline-flex h-8 items-center gap-1 rounded-full px-3 text-xs font-semibold"
-                      style={{ background: theme.primary, color: theme.background }}
-                      type="button"
-                      onClick={() => addItem(item)}
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Add
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      ))}
+      <div className="space-y-0 px-5 pt-[156px]">
+        {sections.map((section) => (
+          <section key={section.id} className="pt-3">
+            <button className="w-full" type="button">
+              <div className="flex items-center justify-between pb-2">
+                <SectionHeader label={section.title} palette={palette} />
+                <ChevronDown className="h-4 w-4" style={{ color: palette.textMuted }} />
+              </div>
+            </button>
+            <div className="border-t" style={{ borderColor: palette.border }}>
+              {section.items.map((item, index) => (
+                <MenuRow
+                  key={`${section.id}-${item.id}`}
+                  isLast={index === section.items.length - 1}
+                  item={item}
+                  onAdd={() => addItem(item)}
+                  palette={palette}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
 
       {cartCount > 0 && (
         <button
-          className="sticky bottom-3 flex h-12 w-full items-center justify-between rounded-full px-5 text-sm font-semibold shadow-lg"
-          style={{ background: theme.accent, color: theme.background }}
+          className="sticky bottom-2 mx-5 mt-4 flex h-12 items-center justify-between rounded-full px-5 text-sm font-semibold shadow-xl"
+          style={{ background: palette.primary, color: palette.primaryText }}
           type="button"
           onClick={goToOrders}
         >
@@ -404,7 +334,7 @@ function MenuScreen({
           <span>Review order</span>
         </button>
       )}
-    </div>
+    </ScreenShell>
   )
 }
 
@@ -412,6 +342,7 @@ function OrdersScreen({
   cartItems,
   config,
   orderPlaced,
+  palette,
   removeItem,
   setOrderPlaced,
   subtotalCents,
@@ -421,163 +352,307 @@ function OrdersScreen({
   cartItems: RuntimeCartItem[]
   config: MobileBuilderProject
   orderPlaced: boolean
+  palette: ReturnType<typeof getRuntimePalette>
   removeItem: (itemId: string) => void
   setOrderPlaced: (value: boolean) => void
   subtotalCents: number
   taxCents: number
   totalCents: number
 }) {
-  const theme = config.appConfig.theme
-
-  if (cartItems.length === 0 && !orderPlaced) {
-    return (
-      <EmptyState
-        config={config}
-        icon={<ShoppingBag className="h-8 w-8" />}
-        title="No active order"
-        body="Add menu items to test the mobile ordering flow inside the simulator."
-      />
-    )
-  }
+  const title = orderPlaced ? 'Track your order' : 'Past Orders'
 
   return (
-    <div className="space-y-4 px-4 pb-5">
-      {orderPlaced && (
-        <section
-          className="rounded-2xl p-4"
-          style={{ background: theme.surface }}
-        >
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-7 w-7" style={{ color: theme.accent }} />
-            <div>
-              <h3 className="text-sm font-semibold">Preview order placed</h3>
-              <p className="text-xs" style={{ color: theme.foregroundMuted }}>
-                {config.appConfig.featureFlags.orderTracking
-                  ? 'Tracking states are visible for this app.'
-                  : 'Order tracking is hidden by config.'}
+    <ScreenShell palette={palette}>
+      <CompactHeader
+        background={config.appConfig.header.background}
+        foreground={config.appConfig.header.foreground ?? palette.text}
+        title={title}
+      />
+      <div className="space-y-7 px-5 pt-[88px]">
+        {orderPlaced && (
+          <GlassCard palette={palette}>
+            <div className="flex items-center justify-between">
+              <StatusPill label="Received" palette={palette} />
+              <p className="font-serif text-sm uppercase tracking-[1.4px]">
+                {money(totalCents)}
               </p>
             </div>
-          </div>
-        </section>
-      )}
+            <h3 className="mt-5 font-serif text-[28px] font-bold leading-8">
+              We have your order.
+            </h3>
+            <p className="mt-3 text-[15px] leading-6" style={{ color: palette.textSecondary }}>
+              {config.appConfig.featureFlags.orderTracking
+                ? 'Follow your pickup progress from here.'
+                : 'Tracking is hidden for this app configuration.'}
+            </p>
+            <div className="mt-5 border-t pt-4" style={{ borderColor: palette.border }}>
+              <p className="text-[11px] font-bold uppercase tracking-[1.1px]" style={{ color: palette.textMuted }}>
+                Pickup code
+              </p>
+              <p className="mt-2 font-serif text-[34px] font-bold leading-10 tracking-[1.2px]">
+                NMLY
+              </p>
+            </div>
+          </GlassCard>
+        )}
 
-      {cartItems.length > 0 && (
-        <section
-          className="rounded-2xl p-4"
-          style={{ background: theme.surface }}
-        >
-          <SectionHeader title="Bag" />
-          <div className="mt-3 space-y-3">
-            {cartItems.map((item) => (
-              <div className="flex items-center justify-between gap-3" key={item.id}>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">{item.name}</p>
-                  <p className="text-xs" style={{ color: theme.foregroundMuted }}>
-                    Qty {item.quantity} · {money(item.priceCents)}
-                  </p>
+        <section>
+          <div className="border-b pb-3" style={{ borderColor: palette.border }}>
+            <SectionHeader
+              action={cartItems.length > 0 ? `${cartItems.length} active` : undefined}
+              label="Recent orders"
+              palette={palette}
+            />
+          </div>
+
+          {cartItems.length === 0 && !orderPlaced ? (
+            <p className="mt-4 text-[15px] leading-[22px]" style={{ color: palette.textSecondary }}>
+              Completed pickups and older orders will collect here.
+            </p>
+          ) : null}
+
+          {cartItems.length > 0 && (
+            <div className="mt-3 space-y-3">
+              {cartItems.map((item) => (
+                <div className="flex items-center justify-between gap-3 py-2" key={item.id}>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold uppercase tracking-[1.2px]">
+                      {item.name}
+                    </p>
+                    <p className="text-xs" style={{ color: palette.textSecondary }}>
+                      Qty {item.quantity} · {money(item.priceCents)}
+                    </p>
+                  </div>
+                  <button
+                    className="flex h-8 w-8 items-center justify-center rounded-full"
+                    style={{ background: palette.surfaceMuted }}
+                    type="button"
+                    onClick={() => removeItem(item.id)}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
                 </div>
-                <button
-                  className="flex h-8 w-8 items-center justify-center rounded-full"
-                  style={{ background: theme.surfaceMuted }}
-                  type="button"
-                  onClick={() => removeItem(item.id)}
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {cartItems.length > 0 && (
+          <GlassCard palette={palette}>
+            <SectionHeader label="Checkout" palette={palette} />
+            <div className="mt-4 space-y-2">
+              <PriceRow label="Subtotal" value={subtotalCents} />
+              <PriceRow label="Estimated tax" value={taxCents} />
+              <div className="border-t pt-3" style={{ borderColor: palette.border }}>
+                <PriceRow label="Total" strong value={totalCents} />
               </div>
-            ))}
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <Chip enabled={config.appConfig.paymentCapabilities.applePay} label="Apple Pay" />
+              <Chip enabled={config.appConfig.paymentCapabilities.card} label="Card" />
+              <Chip enabled={config.appConfig.paymentCapabilities.cash} label="Cash" />
+              <Chip enabled={config.appConfig.paymentCapabilities.refunds} label="Refunds" />
+            </div>
+            <button
+              className="mt-5 h-12 w-full rounded-full text-sm font-semibold"
+              style={{ background: palette.primary, color: palette.primaryText }}
+              type="button"
+              onClick={() => setOrderPlaced(true)}
+            >
+              Place preview order
+            </button>
+          </GlassCard>
+        )}
+      </div>
+    </ScreenShell>
+  )
+}
+
+function AccountScreen({
+  config,
+  palette,
+}: {
+  config: MobileBuilderProject
+  palette: ReturnType<typeof getRuntimePalette>
+}) {
+  const greeting = config.client.ownerName.trim() || 'Welcome back'
+
+  return (
+    <ScreenShell palette={palette}>
+      <CompactHeader
+        background={config.appConfig.header.background}
+        foreground={config.appConfig.header.foreground ?? palette.text}
+        title="Account"
+      />
+      <div className="space-y-7 px-5 pt-[106px]">
+        <GlassCard palette={palette}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <SectionLabel label="Account" palette={palette} />
+              <h3 className="mt-3 font-serif text-[30px] font-bold leading-[34px]">
+                {greeting}
+              </h3>
+            </div>
+            <Chip enabled={config.appConfig.loyaltyEnabled} label={config.appConfig.loyaltyEnabled ? 'Loyalty On' : 'Loyalty Off'} />
+          </div>
+
+          <div className="mt-6 border-t pt-5" style={{ borderColor: palette.border }}>
+            <p className="text-[11px] font-bold uppercase tracking-[1.1px]" style={{ color: palette.textMuted }}>
+              Available points
+            </p>
+            <p className="mt-3 font-serif text-[46px] font-bold leading-[50px]">
+              {config.appConfig.loyaltyEnabled ? '420' : 'Off'}
+            </p>
+            <p className="mt-2 text-[13px] leading-[18px]" style={{ color: palette.textSecondary }}>
+              {config.appConfig.loyaltyEnabled
+                ? 'Lifetime 1,240 pts'
+                : 'Loyalty unavailable'}
+            </p>
+          </div>
+        </GlassCard>
+
+        <section>
+          <SectionLabel label="Account" palette={palette} />
+          <div className="mt-3 border-t" style={{ borderColor: palette.border }}>
+            <AccountRow label="Rewards activity" />
+            <AccountRow label="Profile" />
+            <AccountRow label="Settings" isLast />
           </div>
         </section>
-      )}
 
-      <section
-        className="rounded-2xl p-4"
-        style={{ background: theme.surface }}
-      >
-        <SectionHeader title="Checkout" />
-        <PriceRow label="Subtotal" value={subtotalCents} />
-        <PriceRow label="Estimated tax" value={taxCents} />
-        <div className="mt-3 border-t pt-3" style={{ borderColor: theme.border }}>
-          <PriceRow label="Total" strong value={totalCents} />
+        <div className="text-[12px] leading-5" style={{ color: palette.textSecondary }}>
+          {config.build.appName} · {config.build.bundleId}
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <PaymentChip enabled={config.appConfig.paymentCapabilities.applePay} label="Apple Pay" />
-          <PaymentChip enabled={config.appConfig.paymentCapabilities.card} label="Card" />
-          <PaymentChip enabled={config.appConfig.paymentCapabilities.cash} label="Cash" />
-          <PaymentChip enabled={config.appConfig.paymentCapabilities.refunds} label="Refunds" />
-        </div>
-        <button
-          className="mt-4 h-11 w-full rounded-full text-sm font-semibold"
-          disabled={cartItems.length === 0}
-          style={{ background: theme.primary, color: theme.background }}
-          type="button"
-          onClick={() => setOrderPlaced(true)}
-        >
-          Place preview order
-        </button>
-      </section>
+      </div>
+    </ScreenShell>
+  )
+}
+
+function ScreenShell({
+  children,
+  palette,
+}: {
+  children: ReactNode
+  palette: ReturnType<typeof getRuntimePalette>
+}) {
+  return (
+    <div className="min-h-full" style={{ background: palette.background }}>
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-44"
+        style={{ background: 'rgba(255,255,255,0.20)' }}
+      />
+      {children}
     </div>
   )
 }
 
-function AccountScreen({ config }: { config: MobileBuilderProject }) {
-  const theme = config.appConfig.theme
-
+function FloatingPageHeader({
+  background,
+  children,
+  eyebrow,
+  foreground,
+  title,
+}: {
+  background: string
+  children: ReactNode
+  eyebrow: string
+  foreground: string
+  title: string
+}) {
   return (
-    <div className="space-y-4 px-4 pb-5">
-      <section
-        className="rounded-2xl p-4"
-        style={{ background: theme.surface }}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-semibold"
-            style={{ background: theme.primary, color: theme.background }}
-          >
-            {config.client.ownerName.slice(0, 1)}
-          </div>
-          <div className="min-w-0">
-            <h3 className="truncate text-sm font-semibold">{config.client.ownerName}</h3>
-            <p className="truncate text-xs" style={{ color: theme.foregroundMuted }}>
-              {config.client.ownerEmail}
+    <div
+      className="absolute inset-x-0 top-0 z-20 px-5 pb-4 pt-10"
+      style={{ background, color: foreground }}
+    >
+      <p className="text-[13px] leading-[18px]">{eyebrow}</p>
+      <p className="mt-1 font-serif text-[19px] font-semibold uppercase leading-6 tracking-[2px]">
+        {title}
+      </p>
+      <div className="mt-2">{children}</div>
+    </div>
+  )
+}
+
+function CompactHeader({
+  background,
+  foreground,
+  title,
+}: {
+  background: string
+  foreground: string
+  title: string
+}) {
+  return (
+    <div
+      className="absolute inset-x-0 top-0 z-20 px-5 pb-3 pt-12"
+      style={{ background, color: foreground }}
+    >
+      <p className="font-serif text-[17px] font-semibold uppercase leading-[18px] tracking-[1.2px]">
+        {title}
+      </p>
+    </div>
+  )
+}
+
+function MenuRow({
+  isLast,
+  item,
+  onAdd,
+  palette,
+  showAdd = true,
+}: {
+  isLast: boolean
+  item: MenuItem
+  onAdd: () => void
+  palette: ReturnType<typeof getRuntimePalette>
+  showAdd?: boolean
+}) {
+  return (
+    <article className="min-h-[132px]">
+      <div className="flex w-full items-start gap-4">
+        <div
+          className="flex h-[132px] w-[108px] flex-none items-center justify-center overflow-hidden"
+          style={{ background: '#D5D4CE' }}
+        >
+          {item.imageUrl ? (
+            <img alt="" className="h-full w-full object-cover" src={item.imageUrl} />
+          ) : (
+            <Coffee className="h-6 w-6" style={{ color: palette.accent }} />
+          )}
+        </div>
+        <div
+          className={`flex min-h-[132px] min-w-0 flex-1 items-center py-2 ${
+            isLast ? '' : 'border-b'
+          }`}
+          style={{ borderColor: palette.border }}
+        >
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="min-w-0 flex-1 truncate text-base font-medium uppercase leading-5 tracking-[1.3px]">
+                {item.name}
+              </h3>
+              <p className="font-serif text-sm uppercase leading-5 tracking-[1.4px]">
+                {money(item.priceCents)}
+              </p>
+            </div>
+            <p className="mt-1 line-clamp-3 text-xs leading-[14px]" style={{ color: palette.textSecondary }}>
+              {item.description}
             </p>
+            {showAdd && (
+              <button
+                className="mt-3 inline-flex h-8 items-center gap-1 rounded-full px-3 text-xs font-semibold"
+                style={{ background: palette.primary, color: palette.primaryText }}
+                type="button"
+                onClick={onAdd}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add
+              </button>
+            )}
           </div>
         </div>
-      </section>
-
-      {config.appConfig.loyaltyEnabled && (
-        <section
-          className="rounded-2xl p-4"
-          style={{ background: theme.primary, color: theme.background }}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide opacity-70">
-                Loyalty
-              </p>
-              <h3 className="mt-1 text-2xl font-semibold">420 points</h3>
-            </div>
-            <Sparkles className="h-7 w-7" />
-          </div>
-        </section>
-      )}
-
-      <section
-        className="overflow-hidden rounded-2xl"
-        style={{ background: theme.surface }}
-      >
-        <AccountRow icon={<CreditCard className="h-4 w-4" />} label="Payment methods" />
-        <AccountRow icon={<ReceiptText className="h-4 w-4" />} label="Order history" />
-        <AccountRow icon={<Bell className="h-4 w-4" />} label="Notifications" />
-      </section>
-
-      <section className="rounded-2xl p-4 text-xs" style={{ background: theme.surface }}>
-        <p className="font-semibold">Build profile</p>
-        <p className="mt-2" style={{ color: theme.foregroundMuted }}>
-          {config.build.appName} · {config.build.bundleId}
-        </p>
-      </section>
-    </div>
+      </div>
+    </article>
   )
 }
 
@@ -585,97 +660,181 @@ function RuntimeTabs({
   activeTab,
   cartCount,
   config,
+  palette,
   setActiveTab,
 }: {
   activeTab: AppTab
   cartCount: number
   config: MobileBuilderProject
+  palette: ReturnType<typeof getRuntimePalette>
   setActiveTab: (tab: AppTab) => void
 }) {
-  const theme = config.appConfig.theme
+  const enabledTabs = config.appConfig.enabledTabs
 
   return (
-    <nav
-      className="grid border-t text-center text-[11px]"
-      style={{
-        gridTemplateColumns: `repeat(${config.appConfig.enabledTabs.length}, minmax(0, 1fr))`,
-        borderColor: theme.border,
-        background: theme.surface,
-      }}
-    >
-      {config.appConfig.enabledTabs.map((tab) => {
-        const Icon = tabIcons[tab]
-        const active = activeTab === tab
-        return (
-          <button
-            className="relative flex flex-col items-center gap-1 px-1 py-3 capitalize"
-            key={tab}
-            style={{ color: active ? theme.primary : theme.foregroundMuted }}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-          >
-            <Icon className="h-4 w-4" />
-            {tab}
-            {tab === 'orders' && cartCount > 0 && (
-              <span
-                className="absolute right-4 top-2 h-2 w-2 rounded-full"
-                style={{ background: theme.accent }}
-              />
-            )}
-          </button>
-        )
-      })}
-    </nav>
-  )
-}
-
-function StoreStatus({ config }: { config: MobileBuilderProject }) {
-  const theme = config.appConfig.theme
-
-  return (
-    <section
-      className="rounded-2xl px-4 py-3 text-sm"
-      style={{ background: theme.surface, color: theme.foreground }}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <span className="font-semibold">
-          {config.storeConfig.isOpen ? 'Open now' : 'Closed'}
-        </span>
-        <span>{config.storeConfig.prepEtaMinutes} min pickup</span>
+    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
+      <div
+        className="pointer-events-auto relative h-[68px] w-full max-w-[314px] overflow-hidden rounded-full border p-[3px] shadow-2xl backdrop-blur-xl"
+        style={{
+          background: 'rgba(255, 253, 248, 0.72)',
+          borderColor: 'rgba(255,255,255,0.42)',
+        }}
+      >
+        <div
+          className="absolute bottom-1 top-1 rounded-full transition-transform"
+          style={{
+            background: 'rgba(255, 255, 255, 0.88)',
+            left: 3,
+            width: `calc((100% - 6px) / ${enabledTabs.length})`,
+            transform: `translateX(${Math.max(enabledTabs.indexOf(activeTab), 0) * 100}%)`,
+          }}
+        />
+        <div
+          className="relative grid h-full"
+          style={{ gridTemplateColumns: `repeat(${enabledTabs.length}, minmax(0, 1fr))` }}
+        >
+          {enabledTabs.map((tab) => {
+            const Icon = tabIcons[tab]
+            const active = activeTab === tab
+            return (
+              <button
+                className="relative flex flex-col items-center justify-center gap-1 text-[11px] font-semibold capitalize"
+                key={tab}
+                style={{
+                  color: active ? 'rgba(18,18,18,0.96)' : 'rgba(60,60,67,0.72)',
+                }}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+              >
+                <Icon className={tab === 'menu' ? 'h-6 w-6' : 'h-5 w-5'} />
+                {tab}
+                {tab === 'orders' && cartCount > 0 && (
+                  <span
+                    className="absolute right-4 top-2 h-2 w-2 rounded-full"
+                    style={{ background: palette.accent }}
+                  />
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
-      <p className="mt-1 text-xs" style={{ color: theme.foregroundMuted }}>
-        {config.storeConfig.hoursText}
-      </p>
-    </section>
-  )
-}
-
-function SectionHeader({ action, title }: { action?: string; title: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <h3 className="text-sm font-semibold">{title}</h3>
-      {action && <span className="text-xs opacity-60">{action}</span>}
     </div>
   )
 }
 
-function Capability({ enabled, label }: { enabled: boolean; label: string }) {
+function TabBarDepth({ palette }: { palette: ReturnType<typeof getRuntimePalette> }) {
+  return (
+    <div
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-28"
+      style={{
+        background:
+          'linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.008) 45%, rgba(0,0,0,0.03) 70%, rgba(0,0,0,0.065))',
+        mixBlendMode: palette.background === '#000000' ? 'normal' : 'multiply',
+      }}
+    />
+  )
+}
+
+function GlassCard({
+  children,
+  palette,
+}: {
+  children: ReactNode
+  palette: ReturnType<typeof getRuntimePalette>
+}) {
+  return (
+    <div
+      className="rounded-[32px] border p-5 shadow-sm backdrop-blur-xl"
+      style={{
+        background: 'rgba(255, 253, 248, 0.78)',
+        borderColor: 'rgba(255,255,255,0.42)',
+        color: palette.text,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function GlassTag({
+  label,
+  palette,
+}: {
+  label: string
+  palette: ReturnType<typeof getRuntimePalette>
+}) {
   return (
     <span
-      className={`rounded-full px-2 py-2 text-center text-xs font-medium ${
-        enabled ? 'bg-[#DDEBDD] text-[#22543D]' : 'bg-[#EFE7E7] text-[#8A3838]'
-      }`}
+      className="inline-flex rounded-full border px-3 py-2 text-[11px] font-bold leading-[13px] tracking-[1.1px]"
+      style={{
+        background: 'rgba(255,255,255,0.36)',
+        borderColor: 'rgba(255,255,255,0.28)',
+        color: palette.textSecondary,
+      }}
     >
       {label}
     </span>
   )
 }
 
-function PaymentChip({ enabled, label }: { enabled: boolean; label: string }) {
+function SectionHeader({
+  action,
+  label,
+  palette,
+}: {
+  action?: string
+  label: string
+  palette: ReturnType<typeof getRuntimePalette>
+}) {
+  return (
+    <div className="flex flex-1 items-center justify-between gap-3">
+      <SectionLabel label={label} palette={palette} />
+      {action && <span className="text-xs leading-[18px]" style={{ color: palette.textMuted }}>{action}</span>}
+    </div>
+  )
+}
+
+function SectionLabel({
+  label,
+  palette,
+}: {
+  label: string
+  palette: ReturnType<typeof getRuntimePalette>
+}) {
+  return (
+    <p className="text-[11px] font-bold uppercase leading-[14px] tracking-[1.1px]" style={{ color: palette.textMuted }}>
+      {label}
+    </p>
+  )
+}
+
+function StatusPill({
+  label,
+  palette,
+}: {
+  label: string
+  palette: ReturnType<typeof getRuntimePalette>
+}) {
   return (
     <span
-      className={`rounded-full px-2 py-2 text-center text-xs font-medium ${
-        enabled ? 'bg-[#DDEBDD] text-[#22543D]' : 'bg-[#EFE7E7] text-[#8A3838]'
+      className="rounded-full border px-3 py-2 text-[11px] font-bold uppercase leading-[14px] tracking-[1px]"
+      style={{
+        background: 'rgba(255,255,255,0.40)',
+        borderColor: palette.border,
+        color: palette.text,
+      }}
+    >
+      {label}
+    </span>
+  )
+}
+
+function Chip({ enabled, label }: { enabled: boolean; label: string }) {
+  return (
+    <span
+      className={`rounded-full border px-3 py-2 text-center text-xs font-bold ${
+        enabled ? 'bg-[#FFFDF8] text-[#171513]' : 'bg-[#F3EFE7] text-[#9B9389]'
       }`}
     >
       {label}
@@ -693,82 +852,45 @@ function PriceRow({
   value: number
 }) {
   return (
-    <div
-      className={`mt-2 flex items-center justify-between text-sm ${
-        strong ? 'font-semibold' : ''
-      }`}
-    >
+    <div className={`flex items-center justify-between text-sm ${strong ? 'font-bold' : ''}`}>
       <span>{label}</span>
       <span>{money(value)}</span>
     </div>
   )
 }
 
-function AccountRow({ icon, label }: { icon: ReactNode; label: string }) {
+function AccountRow({ isLast = false, label }: { isLast?: boolean; label: string }) {
   return (
     <button
-      className="flex h-12 w-full items-center justify-between border-b border-black/5 px-4 text-left text-sm last:border-b-0"
+      className={`flex h-14 w-full items-center justify-between text-left text-[15px] ${
+        isLast ? '' : 'border-b'
+      }`}
+      style={{ borderColor: fallbackPalette.border }}
       type="button"
     >
-      <span className="flex items-center gap-3">
-        {icon}
-        {label}
-      </span>
+      <span>{label}</span>
       <ChevronRight className="h-4 w-4 opacity-50" />
     </button>
   )
 }
 
-function EmptyState({
-  body,
-  config,
-  icon,
-  title,
-}: {
-  body: string
-  config: MobileBuilderProject
-  icon: ReactNode
-  title: string
-}) {
+function getRuntimePalette(config: MobileBuilderProject) {
   const theme = config.appConfig.theme
 
-  return (
-    <div className="flex h-full items-center justify-center px-6 pb-12 text-center">
-      <div>
-        <div
-          className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl"
-          style={{ background: theme.surface }}
-        >
-          {icon}
-        </div>
-        <h3 className="mt-4 text-base font-semibold">{title}</h3>
-        <p className="mt-2 text-sm" style={{ color: theme.foregroundMuted }}>
-          {body}
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function IconButton({
-  children,
-  config,
-  label,
-}: {
-  children: ReactNode
-  config: MobileBuilderProject
-  label: string
-}) {
-  return (
-    <button
-      className="flex h-10 w-10 items-center justify-center rounded-xl"
-      style={{ background: config.appConfig.theme.surface }}
-      title={label}
-      type="button"
-    >
-      {children}
-    </button>
-  )
+  return {
+    ...fallbackPalette,
+    background: theme.background || fallbackPalette.background,
+    backgroundAlt: theme.backgroundAlt || fallbackPalette.backgroundAlt,
+    surfaceStrong: theme.surface || fallbackPalette.surfaceStrong,
+    surfaceMuted: theme.surfaceMuted || fallbackPalette.surfaceMuted,
+    card: theme.surface || fallbackPalette.card,
+    text: theme.foreground || fallbackPalette.text,
+    textSecondary: theme.foregroundMuted || fallbackPalette.textSecondary,
+    textMuted: theme.muted || fallbackPalette.textMuted,
+    border: theme.border || fallbackPalette.border,
+    primary: theme.primary || fallbackPalette.primary,
+    accent: theme.accent || fallbackPalette.accent,
+  }
 }
 
 function money(cents: number) {
