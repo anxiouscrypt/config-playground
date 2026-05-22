@@ -23,3 +23,11 @@ The project does not include authentication, deployment, public sharing, or vers
 ## Mobile-Style Preview
 
 The preview uses a mobile product shell because tenant branding, navigation, feature flags, and menu categories are easiest to understand when rendered as a concrete app surface.
+
+## Frontend Import Flow
+
+Import uses a simple pasted JSON prompt for the MVP. A richer file picker would be better for daily use, but pasted JSON keeps the first version small and easy to understand.
+
+## No Authentication
+
+Saved configs are local developer data. Authentication would add product and infrastructure complexity without proving the core config workflow.

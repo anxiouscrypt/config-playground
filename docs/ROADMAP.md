@@ -5,15 +5,13 @@
 - Repository structure
 - Documentation baseline
 - Product scope and architecture definition
-
-## Planned
-
 - Split-screen frontend layout
 - Live JSON editing and syntax errors
 - Mobile-style config preview
 - FastAPI validation and persistence
 - Saved config management UI
 - Backend tests
+- Local setup and dev runner
 
 ## Future Improvements
 

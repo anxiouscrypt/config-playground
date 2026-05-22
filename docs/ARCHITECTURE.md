@@ -76,3 +76,4 @@ The frontend performs syntax validation first because it can happen instantly, t
 - No config version history.
 - No public sharing links.
 - No collaborative editing.
+- Import is paste-based rather than file-picker based.

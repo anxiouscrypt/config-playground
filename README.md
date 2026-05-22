@@ -42,7 +42,49 @@ FastAPI validation -> SQLite config store
 
 ## Local Setup
 
-Detailed setup instructions will be added as the MVP is completed.
+Prerequisites:
+
+- Node.js 20 or newer
+- Python 3.11 or newer
+
+Run both services:
+
+```bash
+chmod +x scripts/dev.sh
+./scripts/dev.sh
+```
+
+The frontend runs at `http://localhost:5173`.
+The backend runs at `http://localhost:8000`.
+
+Run the services manually:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r backend/requirements.txt
+PYTHONPATH=backend .venv/bin/uvicorn app.main:app --reload --port 8000
+```
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Run checks:
+
+```bash
+PYTHONPATH=backend .venv/bin/pytest backend/tests
+cd frontend && npm run build
+```
+
+## Example Usage
+
+1. Start the backend and frontend.
+2. Edit the JSON config on the left.
+3. Watch the mobile preview update from the last valid config.
+4. Save the config to SQLite.
+5. Load or delete saved configs from the sidebar.
 
 ## API Endpoints
 
@@ -55,7 +97,9 @@ Detailed setup instructions will be added as the MVP is completed.
 
 ## What I Learned
 
-Build notes will be captured in `docs/BUILD_LOG.md`.
+- Keeping raw editor text separate from validated state prevents broken JSON from breaking the preview.
+- Pydantic is a good fit for making config contracts explicit at the API boundary.
+- Small developer tools need strong empty states and error messages because the workflow is often exploratory.
 
 ## Future Improvements
 
