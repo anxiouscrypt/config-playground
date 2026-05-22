@@ -1,49 +1,34 @@
 # Build Log
 
-## Phase 1: Repository Initialization
+## Phase 1: Original Config Playground
 
-- Created the base repository structure.
-- Added documentation skeletons, environment example, license, and ignore rules.
+- Created the base React, FastAPI, SQLite project.
+- Added JSON editing, live preview, backend validation, local persistence, docs, and tests.
+- Proved the basic idea: configuration can drive a previewable app surface.
 
-## Phase 2: Product and Architecture Definition
+## Phase 2: Gazelle Research
 
-- Defined the product as a local developer tool for previewing tenant-specific configuration.
-- Documented the editor, validation, preview, API, and SQLite storage boundaries.
-- Captured intentional MVP limits so the project stays small and demoable.
+- Reviewed the Gazelle mobile platform and catalog contracts.
+- Identified the important runtime payloads: `appConfig`, `storeConfig`, `menu`, and `homeCards`.
+- Noted existing Gazelle constraints around single-tenant mobile builds, baked-in brand/location IDs, and the need to avoid fallback content leaking across merchants.
+- Reviewed admin-console planning around clients, locations, capabilities, onboarding, and release readiness.
 
-## Phase 3: Frontend Layout
+## Phase 3: Configurator Rebuild
 
-- Created a Vite React TypeScript frontend.
-- Configured Tailwind CSS.
-- Built the split-screen tool shell with saved configs, JSON editor, validation panel, toolbar, and mobile preview regions.
+- Replaced the generic tenant sample with a Gazelle-style `MobileBuilderProject`.
+- Added form-first sections for client setup, theme, capabilities, store operations, menu data, home cards, and release metadata.
+- Kept an advanced JSON view for contract inspection and import.
+- Rebuilt the mobile preview around Gazelle mobile concepts: home cards, visible menu items, tabs, feature flags, payment support, store state, and brand theme.
 
-## Phase 4: Live JSON Editing
+## Phase 4: Backend Contract Upgrade
 
-- Added a typed sample tenant config.
-- Implemented controlled editor state.
-- Kept raw editor text separate from the last valid parsed tenant config.
-- Added syntax and basic shape feedback so invalid edits do not crash the preview.
+- Replaced the old simple tenant Pydantic schema with Gazelle-style builder models.
+- Added validation for color values, bundle IDs, fulfillment timing, capability mirrors, and shared `locationId` consistency.
+- Kept the existing CRUD API surface while changing the payload to the richer builder project.
 
-## Phase 5: Config-Driven Preview
+## Phase 5: Verification
 
-- Bound preview brand name, colors, logo, navigation, menu categories, and feature flags to config state.
-- Added reset, import, and export controls.
-- Removed unused Vite starter assets.
-
-## Phase 6: Backend API
-
-- Added a FastAPI backend with Pydantic models for tenant configs.
-- Implemented server-side validation and SQLite persistence.
-- Added health, validate, save, list, load, and delete endpoints.
-
-## Phase 7: Frontend/Backend Integration
-
-- Added a frontend API client.
-- Connected save, list, load, and delete flows.
-- Added API error display in the validation panel.
-
-## Phase 8: Tests and Final Polish
-
-- Added Pytest coverage for validation and config CRUD.
-- Updated setup instructions and project documentation.
-- Added a `scripts/dev.sh` helper for running both services locally.
+- Updated backend fixtures and tests for the new schema.
+- Added validation coverage for cross-payload location mismatch.
+- Confirmed backend tests pass.
+- Confirmed the frontend production build passes.

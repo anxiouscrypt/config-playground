@@ -1,25 +1,33 @@
-import type { TenantConfig } from './types'
+import type { MobileBuilderProject } from './types'
 
-export function isTenantConfig(value: unknown): value is TenantConfig {
+export function isMobileBuilderProject(
+  value: unknown,
+): value is MobileBuilderProject {
   if (!value || typeof value !== 'object') {
     return false
   }
 
-  const config = value as Partial<TenantConfig>
+  const project = value as Partial<MobileBuilderProject>
 
   return Boolean(
-    typeof config.id === 'string' &&
-      config.brand &&
-      typeof config.brand.name === 'string' &&
-      typeof config.brand.primaryColor === 'string' &&
-      typeof config.brand.secondaryColor === 'string' &&
-      config.features &&
-      typeof config.features.mobileOrdering === 'boolean' &&
-      typeof config.features.loyalty === 'boolean' &&
-      typeof config.features.orderTracking === 'boolean' &&
-      typeof config.features.guestCheckout === 'boolean' &&
-      Array.isArray(config.navigation) &&
-      config.menu &&
-      Array.isArray(config.menu.categories),
+    typeof project.id === 'string' &&
+      project.client &&
+      typeof project.client.clientName === 'string' &&
+      project.appConfig?.brand &&
+      typeof project.appConfig.brand.brandName === 'string' &&
+      typeof project.appConfig.brand.locationId === 'string' &&
+      project.appConfig.theme &&
+      typeof project.appConfig.theme.primary === 'string' &&
+      Array.isArray(project.appConfig.enabledTabs) &&
+      project.storeConfig &&
+      typeof project.storeConfig.locationId === 'string' &&
+      project.menu &&
+      Array.isArray(project.menu.categories) &&
+      project.homeCards &&
+      Array.isArray(project.homeCards.cards) &&
+      project.build &&
+      typeof project.build.bundleId === 'string',
   )
 }
+
+export const isTenantConfig = isMobileBuilderProject

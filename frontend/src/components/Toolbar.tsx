@@ -21,9 +21,9 @@ export function Toolbar({
   return (
     <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="text-sm font-medium text-emerald-700">Config Playground</p>
+        <p className="text-sm font-medium text-[#2D6A4F]">Gazelle App Configurator</p>
         <h2 className="text-2xl font-semibold text-slate-950">
-          Preview tenant settings before release
+          Configure white-label mobile apps before release
         </h2>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -59,7 +59,7 @@ export function Toolbar({
           disabled={saving}
           onClick={onSave}
           type="button"
-          title="Save config"
+          title="Validate and save project"
         >
           <Save className="h-4 w-4" />
           {saving ? 'Saving' : 'Save'}

@@ -27,7 +27,7 @@ def save_config(config: TenantConfig) -> StoredConfig:
               payload = excluded.payload,
               updated_at = excluded.updated_at
             """,
-            (config.id, config.brand.name, payload, created_at, timestamp),
+            (config.id, config.appConfig.brand.brandName, payload, created_at, timestamp),
         )
 
     return StoredConfig(

@@ -1,33 +1,29 @@
 # Decisions
 
-## Product Boundary
+## Pivot From Generic Config Playground
 
-The tool is a config preview and validation playground, not a deployment system. It intentionally stops at editing, validating, saving, loading, and previewing configuration.
+The original project proved config-driven previewing. The Gazelle use case needs a configurator that maps to a real white-label mobile app lifecycle, so the primary UI is now form-first and the JSON editor is an advanced escape hatch.
 
-## SQLite for Persistence
+## Mirror Gazelle Contracts Without Importing Them
 
-SQLite keeps the project easy to run locally while still demonstrating real persistence and CRUD behavior.
+The project mirrors Gazelle concepts like `appConfig`, `storeConfig`, `menu`, `homeCards`, capabilities, fulfillment, and release metadata. It does not import the private monorepo contracts because this repo should remain standalone, public, and easy to run.
 
-## Pydantic for Validation
+## Keep `/configs` Routes For Now
 
-Pydantic gives typed backend validation with clear errors and keeps the schema close to the API boundary.
+The backend still exposes `/configs` to preserve the original integration and minimize churn. A production hosted builder should rename this boundary to `/projects` and introduce authenticated user/project ownership.
 
-## Split Raw Text from Parsed Config
+## SQLite For Draft Persistence
 
-The editor keeps raw JSON text separate from the last valid parsed config so syntax errors do not break the live preview.
+SQLite is enough for local demos and keeps setup simple. The payload is stored as JSON so the builder can evolve without migrations for every contract field, while Pydantic still validates on save.
+
+## Cross-Field Validation
+
+The backend validates more than field presence. It checks that `locationId` is consistent across runtime payloads and that capability mirrors agree with feature flags. This catches the kinds of mistakes that would otherwise create confusing mobile behavior.
+
+## Form Controls Plus Advanced JSON
+
+Operators need forms. Developers need to see the contract. Keeping both surfaces makes the tool useful for product setup and engineering handoff.
 
 ## Intentional MVP Limits
 
-The project does not include authentication, deployment, public sharing, or version history. Those features are useful, but they are outside the focused portfolio MVP.
-
-## Mobile-Style Preview
-
-The preview uses a mobile product shell because tenant branding, navigation, feature flags, and menu categories are easiest to understand when rendered as a concrete app surface.
-
-## Frontend Import Flow
-
-Import uses a simple pasted JSON prompt for the MVP. A richer file picker would be better for daily use, but pasted JSON keeps the first version small and easy to understand.
-
-## No Authentication
-
-Saved configs are local developer data. Authentication would add product and infrastructure complexity without proving the core config workflow.
+This is not a full SaaS builder yet. It does not include auth, asset upload, app-store submission, direct Gazelle API writes, or an approval workflow. Those are important but would obscure the core configurator workflow in this iteration.

@@ -17,13 +17,13 @@ export function SavedConfigList({
   return (
     <aside className="rounded-lg border border-slate-200 bg-white">
       <div className="border-b border-slate-200 px-4 py-3">
-        <h2 className="text-base font-semibold">Saved Configs</h2>
-        <p className="text-sm text-slate-500">{configs.length} local configs</p>
+        <h2 className="text-base font-semibold">Builder Projects</h2>
+        <p className="text-sm text-slate-500">{configs.length} local drafts</p>
       </div>
       {configs.length === 0 ? (
         <div className="p-3">
           <div className="rounded-md border border-dashed border-slate-300 px-3 py-8 text-center text-sm text-slate-500">
-            No saved configs yet
+            No app projects yet
           </div>
         </div>
       ) : (
@@ -56,7 +56,7 @@ export function SavedConfigList({
                 <button
                   className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-rose-50 hover:text-rose-700"
                   onClick={() => onDelete(config.id)}
-                  title="Delete config"
+                  title="Delete project"
                   type="button"
                 >
                   <Trash2 className="h-4 w-4" />

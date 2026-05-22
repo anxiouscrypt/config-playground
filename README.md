@@ -1,37 +1,44 @@
-# Config Playground
+# Gazelle App Configurator
 
-A live configuration playground for editing JSON app settings and previewing multi-tenant product behavior without redeploying code.
+A white-label mobile app configurator for designing Gazelle-powered merchant apps from structured configuration.
 
 ## Problem
 
-Multi-tenant products often need tenant-specific branding, feature flags, navigation, and content. Hardcoding those differences makes changes slow and risky. This tool gives developers and operators a safe place to validate configuration before shipping it.
+Gazelle’s mobile platform needs to support different brands, locations, menus, capabilities, payment readiness, and release metadata without baking every change into a new code path. A plain JSON playground is useful for developers, but a real white-label workflow needs a website where an operator can create a client project, configure the mobile app, preview the result, validate the contract, and export payloads that map back to the mobile/catalog system.
 
 ## Solution
 
-Config Playground pairs a JSON editor with a live app preview. Developers can change a tenant config, see the product surface update immediately, validate the config against a backend schema, and save known-good versions locally.
+This project adapts the original Config Playground into a Gazelle-aligned configurator. It is form-first for normal users, keeps an advanced JSON source view for developers, renders a live mobile app preview, validates the config with FastAPI/Pydantic, and persists drafts in SQLite.
 
 ## Demo
 
-Screenshot placeholder: `docs/screenshots/config-playground.png`
+Screenshot placeholder: `docs/screenshots/gazelle-app-configurator.png`
 
 ## Features
 
-- Split-screen JSON editor and live mobile-style preview
-- Client-side syntax feedback
-- Server-side schema validation
-- Save, list, load, and delete named configs
-- SQLite persistence for local development
+- Client and location setup for white-label app projects
+- Brand theme controls mapped to Gazelle-style `appConfig.theme`
+- Navigation tabs, feature flags, payment capabilities, and fulfillment controls
+- Store operations settings for hours, pickup instructions, prep ETA, and tax
+- Menu and home-card preview data
+- Mobile preview that reflects theme, menu, home cards, tabs, and capabilities
+- Advanced JSON editor for direct contract inspection and import
+- Server-side validation for color values, capability mirrors, bundle IDs, and location consistency
+- Save, list, load, and delete local app projects with SQLite
+- Export payload shaped around `appConfig`, `storeConfig`, `menu`, `homeCards`, and build metadata
 
 ## Architecture
 
-The React frontend keeps raw editor text and the last valid parsed config separate. The FastAPI backend validates configs with Pydantic and stores saved configs in SQLite.
-
 ```txt
-React editor -> live preview
-      |
-      v
-FastAPI validation -> SQLite config store
+Configurator UI
+  -> form controls and advanced JSON source
+  -> live mobile app preview
+  -> FastAPI validation API
+  -> Pydantic Gazelle-style builder schema
+  -> SQLite draft storage
 ```
+
+The configurator intentionally stays standalone. It mirrors the important Gazelle mobile contracts without importing the private monorepo package, which keeps this repo easy to run and demo.
 
 ## Tech Stack
 
@@ -57,7 +64,7 @@ chmod +x scripts/dev.sh
 The frontend runs at `http://localhost:5173`.
 The backend runs at `http://localhost:8000`.
 
-Run the services manually:
+Run services manually:
 
 ```bash
 python3 -m venv .venv
@@ -81,10 +88,11 @@ cd frontend && npm run build
 ## Example Usage
 
 1. Start the backend and frontend.
-2. Edit the JSON config on the left.
-3. Watch the mobile preview update from the last valid config.
-4. Save the config to SQLite.
-5. Load or delete saved configs from the sidebar.
+2. Create or edit a client project.
+3. Configure brand, theme, tabs, features, payments, fulfillment, store details, menu data, and release metadata.
+4. Watch the mobile preview update immediately.
+5. Validate and save the project.
+6. Export the Gazelle-shaped payload for handoff to the mobile/catalog integration.
 
 ## API Endpoints
 
@@ -95,11 +103,13 @@ cd frontend && npm run build
 - `GET /configs/{config_id}`
 - `DELETE /configs/{config_id}`
 
+The endpoint names still use `/configs` for compatibility with the original playground, but the payload is now a `MobileBuilderProject`.
+
 ## What I Learned
 
-- Keeping raw editor text separate from validated state prevents broken JSON from breaking the preview.
-- Pydantic is a good fit for making config contracts explicit at the API boundary.
-- Small developer tools need strong empty states and error messages because the workflow is often exploratory.
+- A useful white-label builder needs form controls for operators and a raw JSON path for developers.
+- Gazelle’s real app boundary is not just branding; it includes app config, store config, menu, home cards, payments, fulfillment, and release metadata.
+- Cross-field validation matters because mobile payloads must agree on shared identifiers like `locationId`.
 
 ## Future Improvements
 

@@ -1,79 +1,85 @@
-# Config Playground Architecture
+# Architecture
 
 ## System Components
 
-- **React frontend** edits JSON configuration, renders validation state, previews app behavior, and manages saved configs.
-- **Editor state** stores raw text separately from the last valid parsed config.
-- **Preview renderer** turns tenant configuration into a mobile-style product preview.
-- **FastAPI backend** owns server-side validation and persistence.
-- **Pydantic models** define the accepted tenant config shape.
-- **SQLite database** stores named configs for local development.
+- **React configurator** provides form-first controls for client identity, brand theme, capabilities, store operations, menu content, home cards, and release metadata.
+- **Advanced JSON source view** keeps the developer workflow from the original playground and allows direct inspection/import of the full project payload.
+- **Mobile preview renderer** turns the builder project into a realistic white-label app shell with home content, menu data, capability chips, and bottom tabs.
+- **FastAPI backend** validates and persists app projects.
+- **Pydantic models** mirror the important Gazelle mobile/catalog contracts: `appConfig`, `storeConfig`, `menu`, `homeCards`, and build metadata.
+- **SQLite database** stores local drafts as JSON payloads keyed by project ID.
 
 ## Data Flow
 
 ```txt
 User
-  -> React editor
-  -> local JSON parsing
-  -> last valid config
-  -> mobile preview
-  -> FastAPI validation and save
-  -> SQLite config store
+  -> Configurator controls
+  -> MobileBuilderProject state
+  -> Live mobile preview
+  -> FastAPI validation
+  -> SQLite draft store
+  -> Exported Gazelle-shaped payload
 ```
 
-1. The user edits raw JSON in the frontend editor.
-2. The frontend attempts to parse JSON on every change.
-3. Syntax errors are shown immediately without clearing the current preview.
-4. The last valid config drives the mobile preview.
-5. Save and validate actions call the FastAPI backend.
-6. The backend validates with Pydantic and stores valid configs in SQLite.
+The frontend treats the builder project as the source of truth. Form edits update the structured object and regenerate the JSON source. JSON edits parse back into the project when they match the expected shape.
+
+## Builder Document
+
+The saved project wraps the runtime payloads needed by a white-label mobile app:
+
+- `client`: account and owner information for the merchant.
+- `appConfig`: brand, theme, tabs, feature flags, payments, fulfillment, and store capabilities.
+- `storeConfig`: hours, open state, prep ETA, tax rate, and pickup instructions.
+- `menu`: catalog categories and visible menu items.
+- `homeCards`: home screen promotional/content cards.
+- `build`: app name, bundle ID, icon, splash image, and release channel.
+- `publish`: local draft/validation state.
 
 ## API Design
 
 - `GET /health` confirms the backend is reachable.
-- `POST /configs/validate` validates a config without saving it.
-- `POST /configs` validates and persists a config.
-- `GET /configs` lists saved config summaries.
-- `GET /configs/{config_id}` returns one saved config.
-- `DELETE /configs/{config_id}` deletes a saved config.
+- `POST /configs/validate` validates a project without saving it.
+- `POST /configs` validates and persists a project.
+- `GET /configs` lists saved project summaries.
+- `GET /configs/{config_id}` returns one saved project.
+- `DELETE /configs/{config_id}` deletes a project.
+
+The current route prefix remains `/configs` so the original app integration stays simple. A hosted product version should probably expose `/projects` and scoped authenticated routes.
 
 ## Storage Model
-
-Saved configs are keyed by tenant config ID. The database stores the full config JSON plus timestamps. Keeping the payload as JSON preserves flexibility while Pydantic still enforces the public schema at the API boundary.
 
 ```txt
 configs
   id TEXT PRIMARY KEY
-  name TEXT
-  payload TEXT
-  created_at TEXT
-  updated_at TEXT
+  brand_name TEXT NOT NULL
+  payload TEXT NOT NULL
+  created_at TEXT NOT NULL
+  updated_at TEXT NOT NULL
 ```
+
+SQLite stores the full JSON payload to keep the builder flexible while Pydantic owns the public validation contract.
 
 ## Validation Model
 
 The backend validates:
 
-- required brand fields
-- hex color strings
-- feature flag booleans
-- non-empty navigation labels
-- menu categories with stable IDs and item names
+- required client, brand, location, store, menu, and build fields
+- theme color values
+- enabled tabs from the supported mobile tab set
+- bundle ID format
+- fulfillment schedule ordering
+- capability mirror fields such as loyalty/order tracking/staff dashboard
+- matching `locationId` across `appConfig`, `storeConfig`, `menu`, and `homeCards`
+- matching client name and app brand name
 
-The frontend performs syntax validation first because it can happen instantly, then relies on the backend for schema-level validation.
+## Relationship To Gazelle
 
-## Major Decisions
-
-- Use a text editor instead of a full JSON editor package to keep the MVP dependency-light.
-- Keep preview rendering local so changes feel instant.
-- Use SQLite so saved configs survive restarts without requiring external services.
-- Avoid authentication because this is a local portfolio tool, not a hosted multi-user product.
+This repo was researched against the Gazelle mobile platform contracts and catalog defaults. It does not import the private package directly. Instead, it mirrors the contract shape closely enough to prove the configurator workflow and keep the project standalone.
 
 ## Known Limitations
 
-- Local-only MVP.
-- No authentication or authorization.
-- No config version history.
-- No public sharing links.
-- No collaborative editing.
-- Import is paste-based rather than file-picker based.
+- No real authentication yet.
+- No direct write-back to the Gazelle catalog/admin APIs.
+- No asset upload pipeline for icons, splash images, or menu item photos.
+- No version history or approval workflow.
+- The menu editor only edits the seeded sample rows; a production builder needs add/remove/reorder controls.
