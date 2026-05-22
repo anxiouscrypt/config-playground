@@ -1,12 +1,15 @@
 import type { ValidationState } from '../lib/types'
 
 type ValidationPanelProps = {
+  apiError: string | null
   validation: ValidationState
 }
 
-export function ValidationPanel({ validation }: ValidationPanelProps) {
+export function ValidationPanel({ apiError, validation }: ValidationPanelProps) {
   const hasErrors =
-    Boolean(validation.syntaxError) || validation.schemaErrors.length > 0
+    Boolean(apiError) ||
+    Boolean(validation.syntaxError) ||
+    validation.schemaErrors.length > 0
 
   return (
     <aside className="border-t border-slate-200 bg-slate-50 px-4 py-3">
@@ -22,13 +25,20 @@ export function ValidationPanel({ validation }: ValidationPanelProps) {
           {hasErrors ? 'Needs attention' : 'Syntax valid'}
         </span>
       </div>
-      {validation.syntaxError ? (
+      {validation.syntaxError && (
         <p className="mt-2 font-mono text-sm text-rose-700">
           {validation.syntaxError}
         </p>
-      ) : (
+      )}
+      {validation.schemaErrors.map((error) => (
+        <p className="mt-2 font-mono text-sm text-rose-700" key={error}>
+          {error}
+        </p>
+      ))}
+      {apiError && <p className="mt-2 text-sm text-rose-700">{apiError}</p>}
+      {!hasErrors && (
         <p className="mt-2 text-sm text-slate-500">
-          JSON parses successfully. Backend schema validation is next.
+          JSON parses successfully and is ready to save.
         </p>
       )}
     </aside>

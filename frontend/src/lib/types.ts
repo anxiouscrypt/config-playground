@@ -32,3 +32,21 @@ export type ValidationState = {
   syntaxError: string | null
   schemaErrors: string[]
 }
+
+export type ConfigSummary = {
+  id: string
+  brandName: string
+  updatedAt: string
+}
+
+export type StoredConfig = {
+  id: string
+  config: TenantConfig
+  createdAt: string
+  updatedAt: string
+}
+
+export type ValidationResult = {
+  valid: boolean
+  errors: string[]
+}

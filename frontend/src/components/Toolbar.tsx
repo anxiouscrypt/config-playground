@@ -7,9 +7,17 @@ type ToolbarProps = {
   onExport: () => void
   onImport: () => void
   onReset: () => void
+  onSave: () => void
+  saving: boolean
 }
 
-export function Toolbar({ onExport, onImport, onReset }: ToolbarProps) {
+export function Toolbar({
+  onExport,
+  onImport,
+  onReset,
+  onSave,
+  saving,
+}: ToolbarProps) {
   return (
     <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
@@ -48,11 +56,13 @@ export function Toolbar({ onExport, onImport, onReset }: ToolbarProps) {
         </button>
         <button
           className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white shadow-sm hover:bg-slate-800"
+          disabled={saving}
+          onClick={onSave}
           type="button"
           title="Save config"
         >
           <Save className="h-4 w-4" />
-          Save
+          {saving ? 'Saving' : 'Save'}
         </button>
       </div>
     </header>
