@@ -6,6 +6,10 @@ A live configuration playground for editing JSON app settings and previewing mul
 
 Multi-tenant products often need tenant-specific branding, feature flags, navigation, and content. Hardcoding those differences makes changes slow and risky. This tool gives developers and operators a safe place to validate configuration before shipping it.
 
+## Solution
+
+Config Playground pairs a JSON editor with a live app preview. Developers can change a tenant config, see the product surface update immediately, validate the config against a backend schema, and save known-good versions locally.
+
 ## Demo
 
 Screenshot placeholder: `docs/screenshots/config-playground.png`
@@ -21,6 +25,13 @@ Screenshot placeholder: `docs/screenshots/config-playground.png`
 ## Architecture
 
 The React frontend keeps raw editor text and the last valid parsed config separate. The FastAPI backend validates configs with Pydantic and stores saved configs in SQLite.
+
+```txt
+React editor -> live preview
+      |
+      v
+FastAPI validation -> SQLite config store
+```
 
 ## Tech Stack
 

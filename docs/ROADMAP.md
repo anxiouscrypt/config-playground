@@ -4,6 +4,7 @@
 
 - Repository structure
 - Documentation baseline
+- Product scope and architecture definition
 
 ## Planned
 
