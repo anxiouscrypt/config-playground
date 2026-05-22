@@ -1,9 +1,15 @@
-export function MobileAppPreview() {
+import type { TenantConfig } from '../lib/types'
+
+type MobileAppPreviewProps = {
+  config: TenantConfig
+}
+
+export function MobileAppPreview({ config }: MobileAppPreviewProps) {
   return (
     <div className="h-[620px] w-full max-w-[320px] overflow-hidden rounded-[28px] border-[10px] border-slate-900 bg-white shadow-xl">
       <div className="bg-emerald-900 px-5 pb-6 pt-8 text-white">
         <p className="text-xs uppercase tracking-wide text-emerald-100">Preview</p>
-        <h3 className="mt-2 text-2xl font-semibold">Rawaq Coffee</h3>
+        <h3 className="mt-2 text-2xl font-semibold">{config.brand.name}</h3>
         <p className="mt-2 text-sm text-emerald-50">Mobile ordering enabled</p>
       </div>
       <div className="space-y-4 p-4">

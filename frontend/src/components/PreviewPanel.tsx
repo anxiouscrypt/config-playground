@@ -1,6 +1,11 @@
 import { MobileAppPreview } from './MobileAppPreview'
+import type { TenantConfig } from '../lib/types'
 
-export function PreviewPanel() {
+type PreviewPanelProps = {
+  config: TenantConfig
+}
+
+export function PreviewPanel({ config }: PreviewPanelProps) {
   return (
     <section className="flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white">
       <div className="border-b border-slate-200 px-4 py-3">
@@ -10,7 +15,7 @@ export function PreviewPanel() {
         </p>
       </div>
       <div className="flex flex-1 items-center justify-center bg-[#eef2f3] p-6">
-        <MobileAppPreview />
+        <MobileAppPreview config={config} />
       </div>
     </section>
   )

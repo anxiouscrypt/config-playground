@@ -3,7 +3,11 @@ import { Download, RotateCcw, Save, Upload } from 'lucide-react'
 const buttonClass =
   'inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50'
 
-export function Toolbar() {
+type ToolbarProps = {
+  onReset: () => void
+}
+
+export function Toolbar({ onReset }: ToolbarProps) {
   return (
     <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
@@ -13,7 +17,12 @@ export function Toolbar() {
         </h2>
       </div>
       <div className="flex flex-wrap gap-2">
-        <button className={buttonClass} type="button" title="Reset sample config">
+        <button
+          className={buttonClass}
+          onClick={onReset}
+          type="button"
+          title="Reset sample config"
+        >
           <RotateCcw className="h-4 w-4" />
           Reset
         </button>
