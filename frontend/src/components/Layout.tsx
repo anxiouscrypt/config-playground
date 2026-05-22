@@ -40,10 +40,34 @@ export function Layout() {
     setSyntaxError(null)
   }
 
+  function handleImport() {
+    const nextText = window.prompt('Paste a tenant config JSON payload')
+
+    if (nextText !== null) {
+      handleEditorChange(nextText)
+    }
+  }
+
+  function handleExport() {
+    const file = new Blob([formatConfig(lastValidConfig)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(file)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${lastValidConfig.id || 'tenant-config'}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <main className="min-h-screen bg-[#f6f7f9] text-slate-900">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <Toolbar onReset={handleReset} />
+        <Toolbar
+          onExport={handleExport}
+          onImport={handleImport}
+          onReset={handleReset}
+        />
         <div className="grid min-h-0 flex-1 gap-4 py-4 lg:grid-cols-[240px_minmax(0,1fr)_420px]">
           <SavedConfigList />
           <section className="flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white">

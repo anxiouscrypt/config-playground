@@ -4,10 +4,12 @@ const buttonClass =
   'inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50'
 
 type ToolbarProps = {
+  onExport: () => void
+  onImport: () => void
   onReset: () => void
 }
 
-export function Toolbar({ onReset }: ToolbarProps) {
+export function Toolbar({ onExport, onImport, onReset }: ToolbarProps) {
   return (
     <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
@@ -26,11 +28,21 @@ export function Toolbar({ onReset }: ToolbarProps) {
           <RotateCcw className="h-4 w-4" />
           Reset
         </button>
-        <button className={buttonClass} type="button" title="Import JSON">
+        <button
+          className={buttonClass}
+          onClick={onImport}
+          type="button"
+          title="Import JSON"
+        >
           <Upload className="h-4 w-4" />
           Import
         </button>
-        <button className={buttonClass} type="button" title="Export JSON">
+        <button
+          className={buttonClass}
+          onClick={onExport}
+          type="button"
+          title="Export JSON"
+        >
           <Download className="h-4 w-4" />
           Export
         </button>
